@@ -7,6 +7,7 @@
 #include <cmath>
 #include <queue>
 #include "vector.h"
+#include "utility.hpp"
 
 
 namespace sjtu {
@@ -430,7 +431,7 @@ namespace sjtu {
             return bm.close_file();
         }
 
-        Value_Type find(const Key_Type &K) {
+        pair<bool, Value_Type> find(const Key_Type &K) {
 
             Node &ret = pool[cnt++];
             search_to_leaf(K, ret);
@@ -439,9 +440,9 @@ namespace sjtu {
 
             cnt--;
             if (i == -1)
-                return Value_Type();                        /**这里会炸吗，感觉不会,没有什么奇怪的valuetype吧*/
+                return pair<bool, Value_Type>(false, Value_Type());                        /**这里会炸吗，感觉不会,没有什么奇怪的valuetype吧*/
             else
-                return ret.vals[i];
+                return pair<bool, Value_Type>(true, ret.vals[i]);
         }
 
         bool modify(Key_Type K, Value_Type V) {
