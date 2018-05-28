@@ -15,14 +15,14 @@ namespace sjtu
 
 class user {
 
-private:
+public:
     wchar name, pwd, email, phone;
     bool loginSta;
 
 public:
 
     int id, priv;
-    static int idCnt = 2017;
+    static int idCnt;
 
     user(): name(), pwd(), email(), phone() {
         id = -1;
@@ -30,13 +30,19 @@ public:
         loginSta = false;
     }
 
+    user(const user &other):
+            id(other.id), priv(other.priv), name(other.name), pwd(other.pwd), email(other.email), phone(other.phone),
+            loginSta(other.loginSta) {}
+
     user(wchar const &name, wchar const &pwd, wchar const &email, wchar const &phone):
             name(name), pwd(pwd), email(email), phone(phone), id(-1), priv(0), loginSta(false) {}
 
     int getPri() {
         return priv;
     }
-    std::ostream& operator<< (std::ostream &os, const user &obj) const {
+
+};
+    std::ostream& operator<< (std::ostream &os, const user &obj) {
         os << obj.name << obj.email << obj.phone << obj.priv;
         return os;
     }
@@ -45,8 +51,7 @@ public:
         return is;
     }
 
-};
-
+    int user::idCnt = 2017;
 }
 
 

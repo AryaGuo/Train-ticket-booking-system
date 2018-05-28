@@ -14,6 +14,8 @@
 #include "BPlusTree.h"
 #include "tuple.hpp"
 #include "map.hpp"
+#include "queue.hpp"
+#include "constant.h"
 
 typedef sjtu::string wchar;
 typedef sjtu::train train;
@@ -21,11 +23,14 @@ typedef sjtu::ticket ticket;
 typedef sjtu::map <wchar, train> trainSet;
 typedef sjtu::map <wchar, ticket> ticketSet;
 typedef sjtu::user user;
+typedef sjtu::time Time;
+
+const int CAPACITY = sjtu::TRAIN_CAPACITY ;
 
 /*
  * idUser      < id, user >
 
-    Sale        < trainId, train >	sale
+    sale        < trainId, train >	sale
     nSale       < trainId, train >	notSale
 
     locTrain    < loc, trainSet >
@@ -36,20 +41,21 @@ typedef sjtu::user user;
     trCatTicket     < {trainId, date, catalog}, ticketSet >
     idTicket        < {id, date, catalog}, ticketSet >
     infoOrderId     < {id, trainId, loc1, loc2, date, kind}, OrderId >
-    OrderIdTicket   < OrderId, ticket >
+    orderIdTicket   < OrderId, ticket >
  */
 
+//TODO:cmp
 sjtu::BPlusTree <int, user> idUser("user");
-sjtu::BPlusTree <wchar, train> Sale("sale");
+sjtu::BPlusTree <wchar, train> sale("sale");
 sjtu::BPlusTree <wchar, train> nSale("nsale");
-sjtu::BPlusTree <wchar, sjtu::map<wchar, train>> locTrain("locTrain");
+sjtu::BPlusTree <wchar, sjtu::map<wchar, train> > locTrain("locTrain");
 sjtu::BPlusTree <sjtu::tuple<wchar, wchar, char>, trainSet> direct("direct");
-sjtu::BPlusTree <sjtu::tuple<wchar, wchar, char>, trainSet> transfer("transfer");
+sjtu::BPlusTree <sjtu::tuple<wchar, wchar, char>, sjtu::tuple<Time, train, train> > transfer("transfer");
 sjtu::BPlusTree <sjtu::tuple<wchar, wchar, wchar>, ticketSet> trKindTicket("trKindTicket");
 sjtu::BPlusTree <sjtu::tuple<wchar, wchar, wchar>, ticketSet> trCatTicket("trCatTicket");
 sjtu::BPlusTree <sjtu::tuple<int, wchar, char>, ticketSet> idTicket("idTicket");
 sjtu::BPlusTree <sjtu::tuple<int, wchar, wchar, wchar, wchar, wchar>, int> infoOrderId("infoOrderId");
-sjtu::BPlusTree <int, ticket> OrderIdTicket("OrderIdTicket");
+sjtu::BPlusTree <int, ticket> orderIdTicket("orderIdTicket");
 
 bool intersect(ticket const &tic, wchar const &loc1, wchar const &loc2)
 {
@@ -69,7 +75,7 @@ int Register(user &u)
 bool queryProfile(int const &id, user &u)
 {
     auto res = idUser.find(id);
-    if(res.first == false)
+    if(!res.first)
         return false;
     else {
         u = res.second;
@@ -80,8 +86,8 @@ bool queryProfile(int const &id, user &u)
 bool modifyProfile(int const &id, user &u)  //u with name, pwd, email, phone.
 {
     auto pre = idUser.find(id);
-    if(pre.first == false)
-        return flase;
+    if(!pre.first)
+        return false;
     u.id = pre.second.id;
     u.priv = pre.second.priv;
     idUser.modify(id, u);
@@ -90,7 +96,7 @@ bool modifyProfile(int const &id, user &u)  //u with name, pwd, email, phone.
 
 void modifyPrivilege(int const &id, int const &priv)
 {
-    auto pre = idUser.find(id);
+    auto pre = idUser.find(id).second;
     user now(pre);
     now.priv = priv;
     idUser.modify(id, now);
@@ -98,63 +104,266 @@ void modifyPrivilege(int const &id, int const &priv)
 
 void queryTicket(wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &catalog)
 {
+    typedef sjtu::map <wchar, int> map;
     int len = catalog.length();
-    for(int i = 0; i < len; i++) {
-        char cat = catalog[i];  //TODO
-        auto allTrain = direct.find(sjtu::tuple<wchar, wchar, char>(loc1, loc2, cat));
-        for(auto it = allTrain.begin(); it != allTrain.end(); ++it) 
+    sjtu::queue <sjtu::pair<train, sjtu::map <wchar, int> > > que;
+    for(int i = 0; i < len; ++i) {
+        char cat = catalog[i];
+        auto allTrain = direct.find(sjtu::tuple<wchar, wchar, char>(loc1, loc2, cat)).second;
+        for(auto it = allTrain.begin(); it != allTrain.end(); ++it) {   //guarantees the order of trains
             train tr = it->second;
-            map <wchar, int> rem;
-            auto allTicket = trCatTicket.find(sjtu::tuple<wchar, wchar, char>(tr.getId(), date, cat));
+            int sold = 0;
+            sjtu::map <wchar, int> used;
+            auto allTicket = trCatTicket.find(sjtu::tuple<wchar, wchar, char>(tr.getId(), date, cat)).second;
             for(auto j = allTicket.begin(); j != allTicket.end(); ++j) {
                 ticket tic = j->second;
                 if(intersect(tic, loc1, loc2)) {
-                    rem[tic.getKind()] -= tic.num;  //TODO
+                    if(used[tic.getKind()] += tic.getNum() == CAPACITY)
+                        sold++;
                 }
             }
-
+            if(sold < tr.priceNum) {
+                que.push(sjtu::pair<train, sjtu::map <wchar, int> >(tr, used));
+            }
         }
+    }
+    std::cout << que.size() << std::endl;
+    while(!que.empty()) {
+        auto tr = que.front().first;
+        auto used = que.front().second;
+        std::cout << tr.id << ' ' << loc1 << ' ' << sjtu:::getTime(tr, date, loc1) << loc2 << sjtu::getTime(tr, date, loc2);
+        for(int i = 0; i < tr.priceNum; ++i) {
+            int usedTic = used[tr.priceName[i]];
+            if(usedTic < CAPACITY) {
+                std::cout << ' ' << tr.priceName[i] << ' ' << CAPACITY - usedTic << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+void queryTransfer(wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &catalog)
+{
+    //TODO
+}
+
+void insertOrder(int const &id, int const &num, wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind)
+{
+    auto key = sjtu::tuple<int, wchar, wchar, wchar, wchar, wchar>(id, trainId, loc1, loc2, date, kind);
+    auto tmp = infoOrderId.find(key);
+    auto orderId = tmp.second;
+    if(!tmp.first) {
+        //create a new order
+        int cnt = ++ticket::orderCnt;
+        auto tr = sale.find(trainId).second;
+        char catalog = tr.catalog;
+        ticket newTic(id, cnt, num, trainId, loc1, loc2, date, kind, catalog);
+        auto toInsert = sjtu::pair<wchar, ticket>(trainId ,newTic); //TODO: ticketSet: orderId or ticket ??
+        orderIdTicket.insert(cnt, newTic);
+
+        auto ticSet1 = trKindTicket.find(sjtu::tuple<wchar, wchar, wchar>(trainId, date, kind)).second;
+        ticSet1.insert(toInsert);
+        trKindTicket.modify(sjtu::tuple<wchar, wchar, wchar>(trainId, date, kind), ticSet1);
+
+        auto ticSet2 = trCatTicket.find(sjtu::tuple<wchar, wchar, char>(trainId, date, catalog)).second;
+        ticSet2.insert(toInsert);
+        trCatTicket.modify(sjtu::tuple<wchar, wchar, char>(trainId, date, catalog), ticSet2);
+
+        auto ticSet3 = idTicket.find(sjtu::tuple<int, wchar, char>(id, date, catalog)).second;
+        ticSet3.insert(toInsert);
+        idTicket.modify(sjtu::tuple<int, wchar, char>(id, date, catalog), ticSet3);
+
+        infoOrderId.insert(sjtu::tuple<int, wchar, wchar, wchar, wchar, wchar>(id, trainId, loc1, loc2, date, kind), orderId);
+    }
+    else {
+        auto tic = orderIdTicket.find(orderId).second;
+        tic.modifyNum(num);
+        orderIdTicket.modify(orderId, tic);
+    }
+}
+
+bool buyTicket(int const &id, int const &num, wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind) {
+    int used = 0;
+    auto allTicket = trKindTicket.find(sjtu::tuple<wchar, wchar, wchar>(trainId, date, kind)).second;
+    for(auto it = allTicket.begin(); it != allTicket.end(); ++it) {
+        auto ticket = it->second;
+        if(intersect(ticket, loc1, loc2)) {
+            used += ticket.getNum();
+        }
+    }
+    if(used < CAPACITY) {
+        insertOrder(id, num, trainId, loc1, loc2, date, kind);
+        return true;
+    }
+    return false;
+}
+
+bool queryOrder(int const &id, wchar const &date, char const &catalog)
+{
+    auto tmp = idTicket.find(sjtu::tuple<int, wchar, char>(id, date, catalog));
+    if(!tmp.first)
+        return false;
+    auto ticketSet = tmp.second;
+    std::cout << ticketSet.size() << std::endl;
+    for(auto it = ticketSet.begin(); it != ticketSet.end(); ++it) {
+        auto tic = it->second;
+        auto tr = sale.find(tic.trainId).second;
+        std::cout << tic.trainId << ' ';
+        std::cout << tic.loc1 << ' ' << sjtu::getTime(tr, date, tic.loc1) << ' ';
+        std::cout << tic.loc2 << ' ' << sjtu::getTime(tr, date, tic.loc2) << ' ';
+        for(int j = 0; j < tr.priceNum; ++j) {
+            std::cout << tr.priceName[j] << ' ';
+            if(tr.priceName[j] == tic.kind)
+                std::cout << tic.num << ' ';
+            else
+                std::cout << "0 ";
+            std::cout << sjtu::getPrice(tr, tic.loc1, tic.loc2, j) << ' ';
+        }
+        std::cout << std::endl;
+    }
+    return true;
+}
+
+
+bool refundTicket(int const &id, int const &num, wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind)
+{
+    auto tmp = infoOrderId.find(sjtu::tuple<int, wchar, wchar, wchar, wchar, wchar>(id, trainId, loc1, loc2, date, kind));
+    if(!tmp.first)
+        return false;
+    auto orderId = tmp.second;
+    auto tic = orderIdTicket.find(orderId).second;
+    if(tic.num < num)
+        return false;
+    tic.modifyNum(-num);
+    orderIdTicket.modify(orderId, tic);
+    return true;
+}
+
+bool addTrain(train const &tr)
+{
+    if(sale.find(tr.id).first || nSale.find(tr.id).first)
+        return false;
+    nSale.insert(tr.id, tr);
+    return true;
+}
+
+Time calTime(train const &tr1, train const &tr2, wchar const &loc0, wchar const &loc1, wchar const &loc2)
+{
 
 }
 
-void queryTransfer(sjtu::pair<wchar, wchar> const &key, wchar const &date, wchar const &catalog);
+bool saleTrain(wchar const &id)
+{
+    auto tmp0 = nSale.find(id);
+    auto tr = tmp0.second;
+    if(!tmp0.first)
+        return false;
+    nSale.erase(id);
+    sale.insert(id, tr);
 
-int getTicketNum(wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind);
+    char catalog = tr.catalog;
+    for(int i = 0; i < tr.stationNum; ++i) {
+        wchar loc1 = tr.stationName[i];
+        for(int j = i + 1; j < tr.stationNum; ++j) {
+            wchar loc2 = tr.stationName[j];
+            auto key = sjtu::tuple<wchar, wchar, char>(loc1, loc2, catalog);
+            auto tmp = direct.find(key);
+            auto trainS = tmp.second;
+            trainS.insert(sjtu::pair<wchar, train>(id, tr));
+            if(tmp.first) {
+                direct.modify(key, trainS);
+            }
+            else {
+                direct.insert(key, trainS);
+            }
+        }
+    }
 
-void buyTicket(int const &id, int const &num, wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind);
+    for(int i = 0; i < tr.stationNum; ++i) {
+        wchar loc1 = tr.stationName[i];
+        auto trainS = locTrain.find(loc1).second;
+        for(auto it = trainS.begin(); it != trainS.end(); ++it) {
+            auto tr0 = it->second;
+            for(int k = 0; k < tr0.stationNum; ++k) {
+                wchar loc0 = tr0.stationName[k];
+                if(loc0 == loc1)  break;
+                for(int j = i + 1; j < tr.stationNum; ++j) {
+                    wchar loc2 = tr.stationName[j];
+                    auto key = sjtu::tuple<wchar, wchar, char>(loc0, loc2, catalog);
+                    auto tmp = transfer.find(key);
+                    if(!tmp.first) {
+                        transfer.insert(key, sjtu::tuple<Time, train, train>(calTime(tr0, tr, loc0, loc1, loc2), tr0, tr));
+                    }
+                    else {
+                        auto minTime = tmp.second.head();
+                        auto now = calTime(tr0, tr, loc0, loc1, loc2);
+                        if(now < minTime) {
+                            transfer.modify(key, sjtu::tuple<Time, train, train>(now, tr0, tr));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-void queryOrderById(int const &id, wchar const &date, wchar const &catalog);
+    for(int i = 0; i < tr.stationNum; ++i) {
+        wchar loc1 = tr.stationName[i];
+            for(int j = i + 1; j < tr.stationNum; ++j) {
+                wchar loc2 = tr.stationName[j];
+                auto trainS = locTrain.find(loc2).second;
+                for(auto it = trainS.begin(); it != trainS.end(); ++it) {
+                    auto tr1 = it->second;
+                    for(int k = tr1.stationNum; k > 0; --k) {
+                        wchar loc3 = tr1.stationName[k];
+                        if(loc3 == loc1)  break;
+                        auto key = sjtu::tuple<wchar, wchar, char>(loc1, loc3, catalog);
+                        auto tmp = transfer.find(key);
+                        if(!tmp.first) {
+                            transfer.insert(key, sjtu::tuple<Time, train, train>(calTime(tr, tr1, loc1, loc2, loc3), tr, tr1));
+                        }
+                        else {
+                            auto minTime = tmp.second.head();
+                            auto now = calTime(tr, tr1, loc1, loc2, loc3);
+                            if(now < minTime) {
+                                transfer.modify(key, sjtu::tuple<Time, train, train>(now, tr, tr1));
+                            }cm
+                        }
+                }
+            }
+    }
+}
 
-int getOrder(wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind);
+bool queryTrain(wchar const &id, train &T)
+{
+    auto tmp1 = sale.find(id);
+    if(tmp1.first) {
+        T = tmp1.second;
+        return true;
+    }
+    auto tmp2 = nSale.find(id);
+    if(tmp2.first) {
+        T = tmp2.second;
+        return true;
+    }
+    return false;
+}
 
-void refundTicket(int const &id, int const &num, wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind);
+bool deleteTrain(wchar const &id)
+{
+    auto tmp = nSale.find(id);
+    if(!tmp.first)
+        return false;
+    nSale.erase(id);
+    return true;
+}
 
-bool queryAllTrain(wchar const &id);
-
-/*
-     *  add_train *train_id* *name* *catalog* *num(station)* *num(price)* *(name(price) ) x
-     num(price)*
-     *[name time(arriv) time(start) time(stopover) (price) x num(price) ] x num(station)*
-    返回值
-    1 or 0
-    说明
-    添加车号为train_id，名为name的车，该车经过num(station)站(<=60)，共有num(price)种票价(<=5)， 并在之后一一列出是哪种票。
-                     接下来的num(station)行给出各个车站相关信息。 注意刚刚新建的车次中所售车票 query_ticket
-    能被查询或购买。 样例
-    add_train abc123456 G123456 G 2 1 商务座 北京 xx:xx 08:00 00:00 ¥0.0
-    夏威夷 08:01 xx:xx 00:00 ¥1.5
-    ->; 1
-     */
-void addTrain(wchar const &id);
-
-void saleTrain(wchar const &id);
-
-//id号火车是否public
-bool queryTrain(wchar const &id, train &T);
-
-void deleteTrain(wchar const &id);
-
-void modifyTrain(wchar const &id);
+bool modifyTrain(train const &tr)
+{
+    if(nSale.find(tr.id).first)
+        return false;
+    nSale.modify(tr.id, tr);
+    return true;
+}
 
 void Register()
 {
@@ -210,7 +419,7 @@ void queryTransfer()
 {
     wchar loc1, loc2, date, catalog;
     std::cin >> loc1 >> loc2 >> date >> catalog;
-    queryTransfer(pair<wchar, wchar>(loc1, loc2), date, catalog);
+    queryTransfer(loc1, loc2, date, catalog);
 }
 
 void buyTicket()
@@ -219,27 +428,19 @@ void buyTicket()
     wchar trainId, loc1, loc2, date, kind;
     int id, num;
     std::cin >> id >> num >> trainId >> loc1 >> loc2 >> date >> kind;
-    if(getTicketNum(trainId, loc1, loc2, date, kind) < num)
-    {
-        std::cout << "0" << std::endl;
-        return;
-    }
-    buyTicket(id, num, trainId, loc1, loc2, date, kind);
-    std::cout << "1" << std::endl;
+    std::cout << buyTicket(id, num, trainId, loc1, loc2, date, kind) << std::endl;
 }
 
 void queryOrder()
 {
     //query_order *id* *date* *catalog*
     int id;
-    wchar date, catalog;
+    wchar date;
+    char catalog;
     user u;
     std::cin >> id >> date >> catalog;
-    if(!queryProfile(id, u)) {
+    if(!queryOrder(id, date, catalog))
         std::cout << "-1" << std::endl;
-        return;
-    }
-    queryOrderById(id, date, catalog);
 }
 
 void refundTicket()
@@ -247,26 +448,14 @@ void refundTicket()
     wchar trainId, loc1, loc2, date, kind;
     int id, num;
     std::cin >> id >> num >> trainId >> loc1 >> loc2 >> date >> kind;
-    if(getOrder(trainId, loc1, loc2, date, kind) < num)
-    {
-        std::cout << "0" << std::endl;
-        return;
-    }
-    refundTicket(id, num, trainId, loc1, loc2, date, kind);
-    std::cout << "1" << std::endl;
+    std::cout << refundTicket(id, num, trainId, loc1, loc2, date, kind) << std::endl;
 }
 
 void addTrain()
 {
-    wchar id;
-    std::cin >> id;
-    if(queryAllTrain(id))
-    {
-        std::cout << "0" << std::endl;
-        return;
-    }
-    addTrain(id);
-    std::cout << "1" << std::endl;
+    train tr;
+    std::cin >> tr;
+    std::cout << addTrain(tr) << std::endl;
 }
 
 void saleTrain()
@@ -274,13 +463,8 @@ void saleTrain()
     wchar id;
     train T;
     std::cin >> id;
-    if(queryTrain(id, T))
-    {
-        std::cout << "0" << std::endl;
-        return;
-    }
-    saleTrain(id);
-    std::cout << "1" << std::endl;
+    std::cout << saleTrain(id) << std::endl;
+
 }
 
 void queryTrain()
@@ -301,30 +485,20 @@ void deleteTrain()
     wchar id;
     train T;
     std::cin >> id;
-    if(queryTrain(id, T))
-    {
-        std::cout << "0" << std::endl;
-        return;
-    }
-    deleteTrain(id);
-    std::cout << "1" << std::endl;
+    std::cout << deleteTrain(id) << std::endl;
 }
 
 void modifyTrain()
 {
-    wchar id;
     train T;
-    std::cin >> id;
-    if(!queryTrain(id, T))
-    {
-        std::cout << "0" << std::endl;
-        return;
-    }
-    modifyTrain(id);
-    std::cout << "1" << std::endl;
+    std::cin >> T;
+    std::cout << modifyTrain(T) << std::endl;
 }
 
-void clean();
+void clean()
+{
+
+}
 
 void init()
 {

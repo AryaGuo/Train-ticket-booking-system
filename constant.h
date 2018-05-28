@@ -10,16 +10,17 @@ namespace sjtu {
     const addType tree_utility_byte = 16;       ///  root_offset, head_offset, tail_offset, append_offset 4 + 4 + 4 + 4
     const addType node_utility_byte = 15;       ///  address, isLeaf, K_size, V_size, Ch_size, next. 4 + 1 + 2 + 2 + 2 + 4
 
-    const int BlockSize = 4096;                 ///Ø½´ýÓÅ»¯
+    const int BlockSize = 4096;                 ///Ø½ï¿½ï¿½ï¿½Å»ï¿½
 
-    const int maxnum_station = 2000;            ///  Ò»¸ö³µÕ¾×î´ó»ð³µÊý
-    const int maxnum_loc = 500;                 ///  ´ÓÒ»¸öÕ¾µ½ÁíÒ»¸öÕ¾µÄ×î´ó»ð³µÊý £¨ÕâÁ½¸ö²»ÖªµÀ×¼²»×¼È·£©
+    const int maxnum_station = 2000;            ///  Ò»ï¿½ï¿½ï¿½ï¿½Õ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    const int maxnum_loc = 500;                 ///  ï¿½ï¿½Ò»ï¿½ï¿½Õ¾ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Õ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öªï¿½ï¿½×¼ï¿½ï¿½×¼È·ï¿½ï¿½
 
-    const int maxnum_user = 40;                 ///  name       ×î´ó³¤¶È
-    const int maxnum_other = 20;                ///  password, email, phone, id, loc µÈµÈ ×î´ó³¤¶È
-    const int maxnum_cat = 10;                  ///  catalog          ×î´ó³¤¶È
-    const int maxnum_ticket = 5;                ///  ticket_type            ×î´ó³¤¶È (µ±È»ÕâÐ©¶¼ÏÈÐ´×Å£¬²¢Ã»ÓÐÓÃµ½)
+    const int maxnum_user = 40;                 ///  name       ï¿½ï¿½ó³¤¶ï¿½
+    const int maxnum_other = 20;                ///  password, email, phone, id, loc ï¿½Èµï¿½ ï¿½ï¿½ó³¤¶ï¿½
+    const int maxnum_cat = 10;                  ///  catalog          ï¿½ï¿½ó³¤¶ï¿½
+    const int maxnum_ticket = 5;                ///  ticket_type            ï¿½ï¿½ó³¤¶ï¿½ (ï¿½ï¿½È»ï¿½ï¿½Ð©ï¿½ï¿½ï¿½ï¿½Ð´ï¿½Å£ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½Ãµï¿½)
 
+    const int TRAIN_CAPACITY = 2000;
 };
 
 #endif

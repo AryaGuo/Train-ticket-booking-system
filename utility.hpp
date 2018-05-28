@@ -41,7 +41,10 @@ namespace sjtu {
     };
 
     class string {
-    private:
+        friend std::ostream &operator<<(std::ostream &os, const string &obj);
+        friend std::istream &operator>>(std::istream &is, string &obj);
+
+            private:
         char* data;
         int len;
         /*
@@ -78,7 +81,7 @@ namespace sjtu {
 
         string& operator+=(const string &other) {
             char* tmp = new char[len + other.length() + 1];
-            for(int i = 0,; i < len; i++)
+            for(int i = 0; i < len; i++)
                 tmp[i] = data[i];
             for(int i = 0, j = len; i < other.len; i++, j++)
                 tmp[j] = other[i];
@@ -136,24 +139,20 @@ namespace sjtu {
                 res[i - l] = data[i];
             return string(res);
         }
-
-        std::ostream& operator<< (std::ostream &os, const string &obj) const;
-        std::istream& operator>> (std::istream &is, string &obj);
-
     };
 
-    std::ostream &string::operator<<(std::ostream &os, const string &obj) const {
+    std::ostream &operator<<(std::ostream &os, const string &obj) {
         os << obj.data;
         return os;
     }
 
-    std::istream &string::operator>>(std::istream &is, string &obj) {
+    std::istream &operator>>(std::istream &is, string &obj) {
         is >> obj.data;
         return is;
     }
 
     class time {
-    private:
+    public:
         string hour, mini;
     public:
 
@@ -167,21 +166,21 @@ namespace sjtu {
             mini += m % 10 + '0';
         }
 
-        std::ostream& operator<< (std::ostream &os, const time &obj) const;
-        std::istream& operator>> (std::istream &is, time &obj);
-
+        bool operator< (const time &other) {
+            //TODO
+        }
     };
 
-    std::ostream &time::operator<<(std::ostream &os, const time &obj) const {
+    std::ostream &operator<<(std::ostream &os, const time &obj) {
         os << obj.hour << ":" << obj.mini;
         return os;
     }
 
-    std::istream &time::operator>>(std::istream &is, time &obj) {
+    std::istream &operator>>(std::istream &is, time &obj) {
         string tmp(10);
         is >> tmp;
-        hour = tmp.get(0, 1);
-        mini = tmp.get(3, 4);
+        obj.hour = tmp.get(0, 1);
+        obj.mini = tmp.get(3, 4);
         return is;
     }
 
