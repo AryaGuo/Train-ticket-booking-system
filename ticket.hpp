@@ -6,12 +6,15 @@
 #define TRAIN_TICKET_BOOKING_SYSTEM_TICKET_H
 
 #include "utility.hpp"
-using namespace sjtu;
 
-class ticket {
+namespace sjtu {
+
+    class ticket {
+    private:
 
 
-};
+    };
+}
 
 
 #endif //TRAIN_TICKET_BOOKING_SYSTEM_TICKET_H

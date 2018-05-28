@@ -23,5 +23,11 @@ class permission_denied : public exception {
 	/* __________________________ */
 };
 
+class invalid_iterator: public exception {
 
+};
+
+class index_out_of_bound: public exception {
+
+};
 #endif

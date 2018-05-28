@@ -7,25 +7,33 @@
 
 #include <iostream>
 #include "utility.hpp"
-using namespace sjtu;
+
+typedef sjtu::string wchar;
+
+namespace sjtu
+{
 
 class user {
 
 private:
-    string name, pwd, email, phone;
-    int id, priv;
+    wchar name, pwd, email, phone;
     bool loginSta;
 
 public:
+
+    int id, priv;
+    static int idCnt = 2017;
+
     user(): name(), pwd(), email(), phone() {
         id = -1;
         priv = 0;
         loginSta = false;
     }
 
-    user(string const &name, string const &pwd, string const &email, string const &phone, int &id): name(name), pwd(pwd), email(email), phone(phone), id(id), priv(priv) {}
+    user(wchar const &name, wchar const &pwd, wchar const &email, wchar const &phone):
+            name(name), pwd(pwd), email(email), phone(phone), id(-1), priv(0), loginSta(false) {}
 
-    int pri() {
+    int getPri() {
         return priv;
     }
     std::ostream& operator<< (std::ostream &os, const user &obj) const {
@@ -33,12 +41,13 @@ public:
         return os;
     }
     std::istream& operator>> (std::istream &is, user &obj) {
-        is >> obj.name >> obj.email >> obj.phone >> obj.priv;
+        is >> obj.name >> obj.pwd >> obj.email >> obj.phone;
         return is;
     }
 
 };
 
+}
 
 
 #endif //TRAIN_TICKET_BOOKING_SYSTEM_USER_H

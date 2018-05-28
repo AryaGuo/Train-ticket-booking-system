@@ -13,9 +13,14 @@
 #include "ticket.hpp"
 #include "BPlusTree.h"
 #include "tuple.hpp"
-#include "set.hpp"
+#include "map.hpp"
 
 typedef sjtu::string wchar;
+typedef sjtu::train train;
+typedef sjtu::ticket ticket;
+typedef sjtu::map <wchar, train> trainSet;
+typedef sjtu::map <wchar, ticket> ticketSet;
+typedef sjtu::user user;
 
 /*
  * idUser      < id, user >
@@ -34,29 +39,85 @@ typedef sjtu::string wchar;
     OrderIdTicket   < OrderId, ticket >
  */
 
-BPlusTree <int, user> idUser("user");
-BPlusTree <wchar, train> Sale("sale");
-BPlusTree <wchar, train> nSale("nsale");
-BPlusTree <wchar, sjtu::set<train>> locTrain("locTrain");
-BPlusTree <tuple<wchar, wchar, char>, sjtu::set<train>> direct("direct");
-BPlusTree <tuple<wchar, wchar, char>, sjtu::set<train>> transfer("transfer");
-BPlusTree <tuple<wchar, wchar, wchar>, sjtu::set<ticket>> trKindTicket("trKindTicket");
-BPlusTree <tuple<wchar, wchar, wchar>, sjtu::set<ticket>> trCatTicket("trCatTicket");
-BPlusTree <tuple<int, wchar, char>, sjtu::set<ticket>> idTicket("idTicket");
-BPlusTree <tuple<int, wchar, wchar, wchar, wchar, wchar>, int> infoOrderId("infoOrderId");
-BPlusTree <int, ticket> OrderIdTicket("OrderIdTicket");
+sjtu::BPlusTree <int, user> idUser("user");
+sjtu::BPlusTree <wchar, train> Sale("sale");
+sjtu::BPlusTree <wchar, train> nSale("nsale");
+sjtu::BPlusTree <wchar, sjtu::map<wchar, train>> locTrain("locTrain");
+sjtu::BPlusTree <sjtu::tuple<wchar, wchar, char>, trainSet> direct("direct");
+sjtu::BPlusTree <sjtu::tuple<wchar, wchar, char>, trainSet> transfer("transfer");
+sjtu::BPlusTree <sjtu::tuple<wchar, wchar, wchar>, ticketSet> trKindTicket("trKindTicket");
+sjtu::BPlusTree <sjtu::tuple<wchar, wchar, wchar>, ticketSet> trCatTicket("trCatTicket");
+sjtu::BPlusTree <sjtu::tuple<int, wchar, char>, ticketSet> idTicket("idTicket");
+sjtu::BPlusTree <sjtu::tuple<int, wchar, wchar, wchar, wchar, wchar>, int> infoOrderId("infoOrderId");
+sjtu::BPlusTree <int, ticket> OrderIdTicket("OrderIdTicket");
 
-int Register(wchar const &name, wchar const &pwd, wchar const &email, wchar const &phone);
+bool intersect(ticket const &tic, wchar const &loc1, wchar const &loc2)
+{
+    //TODO
+}
 
-bool queryProfile(int const &id, user &U);
+int Register(user &u)
+{
+    int id = ++sjtu::user::idCnt;
+    u.id = id;
+    if(id == 2018)
+        u.priv = 2;
+    idUser.insert(id, u);
+    return 1;
+}
 
-void modifyProfile(int const &id, wchar const &name, wchar const &pwd, wchar const &email, wchar const &phone);
+bool queryProfile(int const &id, user &u)
+{
+    auto res = idUser.find(id);
+    if(res.first == false)
+        return false;
+    else {
+        u = res.second;
+        return true;
+    }
+}
 
-void modifyPrivilege(int const &id, int const &priv);
+bool modifyProfile(int const &id, user &u)  //u with name, pwd, email, phone.
+{
+    auto pre = idUser.find(id);
+    if(pre.first == false)
+        return flase;
+    u.id = pre.second.id;
+    u.priv = pre.second.priv;
+    idUser.modify(id, u);
+    return true;
+}
 
-void queryTicket(pair<wchar, wchar> const &key, wchar const &date, wchar const &catalog);
+void modifyPrivilege(int const &id, int const &priv)
+{
+    auto pre = idUser.find(id);
+    user now(pre);
+    now.priv = priv;
+    idUser.modify(id, now);
+}
 
-void queryTransfer(pair<wchar, wchar> const &key, wchar const &date, wchar const &catalog);
+void queryTicket(wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &catalog)
+{
+    int len = catalog.length();
+    for(int i = 0; i < len; i++) {
+        char cat = catalog[i];  //TODO
+        auto allTrain = direct.find(sjtu::tuple<wchar, wchar, char>(loc1, loc2, cat));
+        for(auto it = allTrain.begin(); it != allTrain.end(); ++it) 
+            train tr = it->second;
+            map <wchar, int> rem;
+            auto allTicket = trCatTicket.find(sjtu::tuple<wchar, wchar, char>(tr.getId(), date, cat));
+            for(auto j = allTicket.begin(); j != allTicket.end(); ++j) {
+                ticket tic = j->second;
+                if(intersect(tic, loc1, loc2)) {
+                    rem[tic.getKind()] -= tic.num;  //TODO
+                }
+            }
+
+        }
+
+}
+
+void queryTransfer(sjtu::pair<wchar, wchar> const &key, wchar const &date, wchar const &catalog);
 
 int getTicketNum(wchar const &trainId, wchar const &loc1, wchar const &loc2, wchar const &date, wchar const &kind);
 
@@ -97,9 +158,9 @@ void modifyTrain(wchar const &id);
 
 void Register()
 {
-    wchar name, pwd, email, phone;
-    std::cin >> name >> pwd >> email >> phone;
-    std::cout << Register(name, pwd, email, phone) << std::endl;
+    user u;
+    std::cin >> u;
+    std::cout << Register(u) << std::endl;
 }
 
 void queryProfile()
@@ -117,15 +178,11 @@ void modifyProfile()
 {
     int id;
     user u;
-    wchar name, pwd, email, phone;
-    std::cin >> id >> name >> pwd >> email >> phone;
-    if(!queryProfile(id, u))
+    std::cin >> id >> u;
+    if(!modifyProfile(id, u))
         std::cout << "0" << std::endl;
     else
-    {
-        modifyProfile(id, name, pwd, email, phone);
         std::cout << "1" << std::endl;
-    }
 }
 
 void modifyPrivilege()
@@ -133,7 +190,7 @@ void modifyPrivilege()
     int id1, id2, priv;
     user u1, u2;
     std::cin >> id1 >> id2 >> priv;
-    if(!queryProfile(id1, u1) || !queryProfile(id2, u2) || u1.pri() !=2 || u2.pri() > priv)
+    if(!queryProfile(id1, u1) || !queryProfile(id2, u2) || u1.getPri() !=2 || u2.getPri() > priv)
         std::cout << "0" << std::endl;
     else
     {
@@ -146,7 +203,7 @@ void queryTicket()
 {
     wchar loc1, loc2, date, catalog;
     std::cin >> loc1 >> loc2 >> date >> catalog;
-    queryTicket(pair<wchar, wchar>(loc1, loc2), date, catalog);
+    queryTicket(loc1, loc2, date, catalog);
 }
 
 void queryTransfer()
@@ -236,7 +293,7 @@ void queryTrain()
         std::cout << "0" << std::endl;
         return;
     }
-    std::cout << T;//TODO
+    std::cout << T;
 }
 
 void deleteTrain()
