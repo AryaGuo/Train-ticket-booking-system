@@ -6,7 +6,11 @@
 
 namespace sjtu {
 
-        template<class Key_Type, class Value_Type>
+        template<class Key_Type,
+                class Value_Type,
+                class Compare = std::less<Key_Type>,
+                class Compare_child = std::less<addType>
+             >
         class TreeNode {
         public:
         addType address;          // 文件中地址
@@ -18,6 +22,28 @@ namespace sjtu {
         addType next;
 
         bool isLeaf;
+
+
+        bool Cmp(const Key_Type &x, const Key_Type &y) const{       ///<
+            static Compare _cmp;
+            return _cmp(x, y);
+        }
+        bool Equal(const Key_Type &x, const Key_Type &y) const{     /// ==
+            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+            else return 1;
+        }
+
+
+        bool Cmp_child(const addType &x, const addType &y) const{       ///<
+            static Compare_child _cmp;
+            return _cmp(x, y);
+        }
+        bool Equal_child(const addType &x, const addType &y) const{     /// ==
+            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+            else return 1;
+        }
+
+
 
         explicit TreeNode(addType _address = -1, bool _isleaf = true):
                 childs(BlockSize / sizeof(addType)),
@@ -58,7 +84,7 @@ namespace sjtu {
         int search_sup(Key_Type K) {
             int pos = 0;
             if(keys.size() < 10) {
-                while (pos < keys.size() && keys[pos] <= K) pos++;
+                while (pos < keys.size() && !Cmp(K,keys[pos])) pos++;
 
                 if (pos == keys.size()) return -1;
                 else return pos;
@@ -68,12 +94,12 @@ namespace sjtu {
                 int mid;
                 while(high - low >= 10) {
                     mid = (low + high) / 2;
-                    if(keys[mid] <= K)
+                    if(!Cmp(K,keys[mid]))
                         low = mid;
                     else
                         high = mid;
                 }
-                while (low < keys.size() && keys[low] <= K) ++low;
+                while (low < keys.size() && !Cmp(K,keys[low])) ++low;
                 if (low == keys.size()) return -1;
                 else return low;
             }
@@ -83,7 +109,7 @@ namespace sjtu {
         int search_exact(const Key_Type &K) {
             if(keys.size() < 10) {
                 int pos = 0;
-                while (pos < keys.size() && keys[pos] != K) ++pos;
+                while (pos < keys.size() && !Equal(K,keys[pos]) ) ++pos;
 
                 if (pos == keys.size()) return -1;
                 else return pos;
@@ -93,14 +119,14 @@ namespace sjtu {
                 int mid;
                 while(high - low >= 10) {
                     mid = (low + high) / 2;
-                    if(keys[mid] == K)
+                    if( Equal(K,keys[mid]) )
                         return mid;
                     else if(keys[mid] < K)
                         low = mid;
                     else
                         high = mid;
                 }
-                while (low < keys.size() && keys[low] != K) ++low;
+                while (low < keys.size() && !Equal(K,keys[mid]) ) ++low;
 
                 if (low == keys.size()) return -1;
                 else return low;
@@ -127,7 +153,7 @@ namespace sjtu {
         int search_child(addType child) {
             if(childs.size() < 10) {
                 int i = 0;
-                while (i < childs.size() && childs[i] != child) ++i;
+                while (i < childs.size() && !Equal_child(childs[i],child)) ++i;
                 if (i == childs.size()) {
                     return -1;
                 }
@@ -138,14 +164,14 @@ namespace sjtu {
                 int mid;
                 while(high - low >= 10) {
                     mid = (low + high) / 2;
-                    if(childs[mid] == child)
+                    if(Cmp_child(childs[mid],child))
                         return mid;
                     else if(childs[mid] < child)
                         low = mid;
                     else
                         high = mid;
                 }
-                while (low < childs.size() && childs[low] != child) ++low;
+                while (low < childs.size() && !Equal_child(childs[low],child)) ++low;
 
                 if (low == childs.size()) return -1;
                 else return low;
