@@ -12,7 +12,7 @@
 /*
      *  add_train *train_id* *name* *catalog* *num(station)* *num(price)* *(name(price) ) x
      num(price)*
-     *[name time(arriv) time(startTime) time(stopoverover) (price) x num(price) ] x num(station)*
+     *[name time(arriv) time(startTime) time(stopover) (price) x num(price) ] x num(station)*
     返回值
     1 or 0
     说明
@@ -24,7 +24,8 @@
     ->; 1
      */
 
-namespace sjtu {
+namespace sjtu
+{
 
     class train;
 
@@ -34,20 +35,6 @@ namespace sjtu {
 
     double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
         //TODO
-    }
-
-    double stringToDouble(string str) {
-        int len = str.length(), pos = 1;
-        double res = 0, base = 1;
-        while(str[pos] != '.' && pos < len)
-            res = res * 10 + str[pos] - '0', ++pos;
-        ++pos;
-        while(pos < len) {
-            base /= 10;
-            res += (str[pos] - '0') * base;
-            ++pos;
-        }
-        return res;
     }
 
     class train {
@@ -68,6 +55,30 @@ namespace sjtu {
             price = nullptr;
         }
 
+        train& operator=(const train &other) {
+            this->~train();
+            id = other.id;
+            name = other.name;
+            catalog = other.catalog;
+            stationNum = other.stationNum;
+            priceNum = other.priceNum;
+            stationName = new string[stationNum];
+            priceName = new string[priceNum];
+            arriveTime = new time[stationNum];
+            startTime = new time[stationNum];
+            stopover = new time[stationNum];
+            price = new double* [stationNum];
+            for(int i = 0; i < stationNum; ++i) {
+                arriveTime[i] = other.arriveTime[i];
+                startTime[i] = other.startTime[i];
+                stopover[i] = other.stopover[i];
+                price[i] = new double[priceNum];
+                for(int j = 0; j < priceNum; ++j)
+                    price[i][j] = other.price[i][j];
+            }
+            return *this;
+        }
+
         bool operator < (const train &other) {
             return id < other.id;
         }
@@ -82,8 +93,8 @@ namespace sjtu {
             delete startTime;
             delete stopover;
             for(int i = 0; i < priceNum; i++)
-                delete price[i];
-            delete []price;
+                delete [] price[i];
+            delete [] price;
         }
     };
 
@@ -111,11 +122,13 @@ namespace sjtu {
         obj.arriveTime = new time[obj.stationNum];
         obj.startTime = new time[obj.stationNum];
         obj.stopover = new time[obj.stationNum];
+        obj.price = new double*[obj.stationNum];
         for(int i = 0; i < obj.priceNum; ++i) {
             is >> obj.priceName[i];
         }
         for(int i = 0; i < obj.stationNum; ++i) {
             is >> obj.stationName[i] >> obj.arriveTime[i] >> obj.startTime[i] >> obj.stopover[i];
+            obj.price[i] = new double[obj.priceNum];
             for(int j = 0; j < obj.priceNum; ++j) {
                 is >> tmp;
                 obj.price[i][j] = stringToDouble(tmp);

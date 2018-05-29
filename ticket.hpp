@@ -8,7 +8,8 @@
 #include "utility.hpp"
 #include "train.hpp"
 
-namespace sjtu {
+namespace sjtu
+{
 
     class ticket {
     public:

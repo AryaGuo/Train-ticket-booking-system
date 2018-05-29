@@ -6,6 +6,11 @@
 
 namespace sjtu {
 
+    template<class T1, class T2>
+    class pair;
+    class string;
+    class time;
+
     template<class T>
     T min(T a, T b) {
         return a < b ? a : b;
@@ -22,6 +27,7 @@ namespace sjtu {
         a = b;
         b = tmp;
     }
+    double stringToDouble(string str);
 
     template<class T1, class T2>
     class pair {
@@ -44,12 +50,12 @@ namespace sjtu {
         friend std::ostream &operator<<(std::ostream &os, const string &obj);
         friend std::istream &operator>>(std::istream &is, string &obj);
 
-            private:
+    private:
         char* data;
         int len;
         /*
          * 0-base
-         * len = length + 1 for'\0'
+         * arrayLength = len + 1 for '\0'
          */
 
     public:
@@ -77,6 +83,7 @@ namespace sjtu {
             len = other.len;
             data = new char[len + 1];
             memcpy(data, other.data, sizeof(char) * (len + 1));
+            return *this;
         }
 
         string& operator+=(const string &other) {
@@ -93,11 +100,12 @@ namespace sjtu {
 
         string& operator+= (const char &ch) {
             char *tmp = new char[len + 2];
-            memcpy(tmp, data, sizeof(data));
+            memcpy(tmp, data, sizeof(char) * (len + 1));
             tmp[len] = ch;
             len++;
             delete data;
             data = tmp;
+            return *this;
         }
 
         bool operator== (const string &other) const{
@@ -153,38 +161,57 @@ namespace sjtu {
 
     class time {
     public:
-        string hour, mini;
+        int hour, mini;
     public:
 
-        time(): hour("xx"), mini("xx") {}
-        time(int h, int m) {
-            hour = string();
-            hour += h / 10 + '0';
-            hour += h % 10 + '0';
-            mini = string();
-            mini += m / 10 + '0';
-            mini += m % 10 + '0';
-        }
+        time(): hour(-1), mini(-1) {}
+        time(int h, int m): hour(h), mini(m) {}
 
         bool operator< (const time &other) {
-            //TODO
+            return hour < other.hour || (hour == other.hour && mini < other.mini);
         }
     };
 
     std::ostream &operator<<(std::ostream &os, const time &obj) {
-        os << obj.hour << ":" << obj.mini;
+        if(obj.hour == -1) {
+            os << "xx:xx";
+        }
+        else {
+            if(obj.hour < 10)
+                os << '0';
+            os << obj.hour << ":";
+            if(obj.mini < 10)
+                os << '0';
+            os << obj.mini;
+        }
         return os;
     }
 
     std::istream &operator>>(std::istream &is, time &obj) {
         string tmp(10);
         is >> tmp;
-        obj.hour = tmp.get(0, 1);
-        obj.mini = tmp.get(3, 4);
+        if(tmp[0] == 'x')
+            obj.hour = obj.mini = -1;
+        else {
+            obj.hour = (int)stringToDouble(tmp.get(0, 1));
+            obj.mini= (int)stringToDouble(tmp.get(3, 4));
+        }
         return is;
     }
 
-
+    double stringToDouble(string str) {
+        int len = str.length(), pos = 1;
+        double res = 0, base = 1;
+        while(str[pos] != '.' && pos < len)
+            res = res * 10 + str[pos] - '0', ++pos;
+        ++pos;
+        while(pos < len) {
+            base /= 10;
+            res += (str[pos] - '0') * base;
+            ++pos;
+        }
+        return res;
+    }
 }
 
 #endif

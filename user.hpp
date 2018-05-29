@@ -8,15 +8,13 @@
 #include <iostream>
 #include "utility.hpp"
 
-typedef sjtu::string wchar;
-
 namespace sjtu
 {
 
-class user {
+    class user {
 
 public:
-    wchar name, pwd, email, phone;
+    string name, pwd, email, phone;
     bool loginSta;
 
 public:
@@ -34,7 +32,7 @@ public:
             id(other.id), priv(other.priv), name(other.name), pwd(other.pwd), email(other.email), phone(other.phone),
             loginSta(other.loginSta) {}
 
-    user(wchar const &name, wchar const &pwd, wchar const &email, wchar const &phone):
+    user(string const &name, string const &pwd, string const &email, string const &phone):
             name(name), pwd(pwd), email(email), phone(phone), id(-1), priv(0), loginSta(false) {}
 
     int getPri() {

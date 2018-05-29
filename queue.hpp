@@ -8,27 +8,67 @@
 #include "exceptions.hpp"
 
 namespace sjtu {
+
     template <class T>
     class queue {
     private:
-        T *head, *tail;
+        struct node {
+            T *data;
+            node *next;
+            node(): data(nullptr), next(nullptr){}
+            node(const T &val): next(nullptr){
+                data = new T(val);
+            }
+            node(const node &other): next(other.next) {
+                data = new T(*other.data);
+            }
+
+            node& operator=(const node &other) {
+                if(this == &other)
+                    return *this;
+                delete data;
+                data = new T(*other.data);
+                next = other.next;
+            }
+
+            ~node() {
+                delete data;
+            }
+        };
+        node *head, *tail;
         int sz;
 
     public:
         queue():head(nullptr), tail(nullptr), sz(0) {}
 
         void push(const T &obj) {
-            //TODO
+            sz++;
+            auto tmp = new T(obj);
+            if(sz == 0) {
+                head = tail = tmp;
+            }
+            else {
+                tail->next = tmp;
+                tail = tmp;
+            }
         }
 
         void pop() {
-            //TODO
+            sz--;
+            auto del = head->data;
+            delete del;
+            if(sz == 0) {
+                head = tail = nullptr;
+            }
+            else {
+                head = head->next;
+            }
         }
 
         T front() {
             if(head)
                 return *head;
-            throw
+            throw invalid_operation();
         }
 
         bool empty() {
@@ -40,7 +80,12 @@ namespace sjtu {
         }
 
         ~queue() {
-            //TODO
+            while(head != tail) {
+                auto del = head->data;
+                delete del;
+                head = head->next;
+            }
+            delete head->data;
         }
 
     };

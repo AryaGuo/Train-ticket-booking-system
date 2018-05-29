@@ -15,7 +15,8 @@ namespace sjtu {
             class Key,
             class T,
             class Compare = std::less<Key>
-    > class map {
+    >
+    class map {
 
     public:
         class iterator;

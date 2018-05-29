@@ -30,4 +30,8 @@ class invalid_iterator: public exception {
 class index_out_of_bound: public exception {
 
 };
+
+class invalid_operation: public exception {
+
+};
 #endif
