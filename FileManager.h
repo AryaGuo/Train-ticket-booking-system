@@ -17,10 +17,14 @@
 
 namespace sjtu {
 
-    template <class Key_Type, class Value_Type>
+    template<class Key_Type,
+            class Value_Type,
+            class Compare = std::less<Key_Type>,
+            class Compare_child = std::less<addType>
+            >
     class FileManager {
        // friend class BPlusTree;
-       /**ÎÒ¾õµÃÕâ¸öÓÑÔªÉùÃ÷ÊÇ±ØÒªµÄ£¬µ«ÊÇĞ´ÁË»á±¨´í¡£¡£¡£*/
+       /**æˆ‘è§‰å¾—è¿™ä¸ªå‹å…ƒå£°æ˜æ˜¯å¿…è¦çš„ï¼Œä½†æ˜¯å†™äº†ä¼šæŠ¥é”™ã€‚ã€‚ã€‚*/
     private:
         typedef TreeNode<Key_Type, Value_Type> Node;
 
@@ -64,6 +68,7 @@ namespace sjtu {
                 fread(&head_off, sizeof(int), 1, file);
                 fread(&tail_off, sizeof(int), 1, file);
                 fread(&append_off, sizeof(int), 1, file);
+              //  std::cout<<root_off<<' '<<head_off<<' '<<tail_off<<' '<<append_off<<'\n';
             }
         }
 
@@ -196,7 +201,7 @@ namespace sjtu {
 
             fwrite(&cur.isLeaf, sizeof(bool), 1, file);
 
-            int tmp = cur.keys.size();        fwrite(&tmp, sizeof(int), 1, file);
+            int tmp = cur.keys.size();          fwrite(&tmp, sizeof(int), 1, file);
             tmp = cur.vals.size();              fwrite(&tmp, sizeof(int), 1, file);
             tmp = cur.childs.size();            fwrite(&tmp, sizeof(int), 1, file);
 
@@ -212,7 +217,7 @@ namespace sjtu {
 
             fwrite(&cur.isLeaf, sizeof(bool), 1, file);
 
-            int tmp = cur.keys.size();        fwrite(&tmp, sizeof(int), 1, file);
+            int tmp = cur.keys.size();          fwrite(&tmp, sizeof(int), 1, file);
             tmp = cur.vals.size();              fwrite(&tmp, sizeof(int), 1, file);
             tmp = cur.childs.size();            fwrite(&tmp, sizeof(int), 1, file);
 
