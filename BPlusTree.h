@@ -5,22 +5,46 @@
 #include "Node.h"
 #include <cstring>
 #include <cmath>
-#include <queue>
+
 #include "vector.h"
 #include "utility.hpp"
 
 
 namespace sjtu {
 
-
-
-    template<class Key_Type, class Value_Type>
-
+    template<class Key_Type,
+             class Value_Type,
+             class Compare = std::less<Key_Type>,
+             class Compare_child = std::less<addType>
+             >
         /**
         b+树本体
         */
-
     class BPlusTree {
+        bool Cmp(const Key_Type &x, const Key_Type &y) const{       ///<
+            static Compare _cmp;
+            return _cmp(x, y);
+        }
+        bool Equal(const Key_Type &x, const Key_Type &y) const{     /// ==
+            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+            else return 1;
+        }
+
+
+        bool Cmp_child(const addType &x, const addType &y) const{       ///<
+            static Compare_child _cmp;
+            return _cmp(x, y);
+        }
+        bool Equal_child(const addType &x, const addType &y) const{     /// ==
+            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+            else return 1;
+        }
+
+
+
+
+
+
     private:
         typedef TreeNode<Key_Type, Value_Type> Node;
 
@@ -33,7 +57,7 @@ namespace sjtu {
 
     private:
         char filename[50];
-        FileManager<Key_Type, Value_Type> bm;
+
 
 
         int branch_degree, leaf_degree;
@@ -42,7 +66,7 @@ namespace sjtu {
         Node pool[50];
     public:
         int cnt;            /**    记录pool的num     */
-
+        FileManager<Key_Type, Value_Type> bm;
     private:
 
         retT erase_node(Node &cur, const Key_Type &K) {
@@ -77,7 +101,8 @@ namespace sjtu {
                         bm.write_block(ch);
                         cnt--;
                         return retT(true, false);
-                    }/**  大于一半有东西直接返回并写入 ，否则开始骚操作     */
+                    }
+                    /**  大于一半有东西直接返回并写入 ，否则开始骚操作     */
 
                     else {
                         Node &sbl = pool[cnt++];
@@ -100,18 +125,23 @@ namespace sjtu {
                             sbl_off *= -1;
                         }
 
-                        key_pos = std::min(ch_pos, sbl_pos);
+                        //key_pos = std::min(ch_pos, sbl_pos);
+                        if(ch_pos < sbl_pos)
+                        {
+                            key_pos = ch_pos;
+                            l_node = &ch;
+                            r_node = &sbl;
+                        }
+                        else
+                        {
+                            key_pos = sbl_pos;
+                            l_node = &sbl;
+                            r_node = &ch;
+                        }
+
                         K_bt = cur.keys[key_pos];
 
                         if(ch.keys.size() + sbl.keys.size() <= leaf_degree) {   /**  可以放一起就放一起喽   */
-                            if(ch_pos < sbl_pos) {
-                                l_node = &ch;
-                                r_node = &sbl;
-                            }
-                            else {
-                                l_node = &sbl;
-                                r_node = &ch;
-                            }
 
                             l_node->next = r_node->next;
                             if (bm.tail_off == r_node->address)
@@ -123,7 +153,7 @@ namespace sjtu {
                             }
 
                             cur.keys.erase(key_pos);
-                            cur.childs.erase(key_pos + (int) 1);
+                            cur.childs.erase(key_pos + 1);
 
                             bm.write_block(*l_node);
                             bm.write_block(*r_node);    /**     尽管这个右儿子没甚用      */
@@ -288,7 +318,7 @@ namespace sjtu {
          B_next.keys.assign(B.keys, mid, B.keys.size());
 
          B.childs.shorten_len(mid);
-         B.keys.shorten_len(mid - (int)1);
+         B.keys.shorten_len(mid - 1);
          return mid_key;
      }
 
@@ -320,7 +350,8 @@ namespace sjtu {
             if (cur.isLeaf) {
                 bool success = insert_in_leaf(cur, K, V);
                 return retT(success, success);
-            } else {
+            }
+            else {
                 Node &ch = pool[cnt++];
                 retT ret_info;
 
@@ -349,7 +380,7 @@ namespace sjtu {
                             bm.tail_off = newLeaf.address;
 
                         split_leaf(ch, newLeaf);
-                        cur.childs.insert(ch_pos + (int) 1, newLeaf.address);
+                        cur.childs.insert(ch_pos + 1, newLeaf.address);
                         cur.keys.insert(ch_pos, newLeaf.keys[0]);
 
                         bm.write_block(ch);
@@ -417,6 +448,8 @@ namespace sjtu {
             leaf_degree = (BlockSize - tree_utility_byte - node_utility_byte) / (K_byte + V_byte);
             branch_degree = (BlockSize - node_utility_byte + K_byte) / (sizeof(addType) + K_byte);
 
+           // std::cout<<leaf_degree<<' '<<branch_degree<<'\n';
+
         }
 
         ~BPlusTree() {
@@ -431,13 +464,11 @@ namespace sjtu {
             return bm.close_file();
         }
 
-        pair<bool, Value_Type> find(const Key_Type &K) {
 
+        pair<bool, Value_Type> find(const Key_Type &K) {
             Node &ret = pool[cnt++];
             search_to_leaf(K, ret);
-
             int i = ret.search_exact(K);
-
             cnt--;
             if (i == -1)
                 return pair<bool, Value_Type>(false, Value_Type());                        /**这里会炸吗，感觉不会,没有什么奇怪的valuetype吧*/
@@ -593,6 +624,8 @@ namespace sjtu {
                 return true;
             }
         }
+
+
 
 
 
