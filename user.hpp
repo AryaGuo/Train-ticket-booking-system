@@ -39,6 +39,10 @@ public:
         return priv;
     }
 
+    bool operator< (const user &other) const{
+        return id < other.id;
+    }
+
 };
     std::ostream& operator<< (std::ostream &os, const user &obj) {
         os << obj.name << obj.email << obj.phone << obj.priv;

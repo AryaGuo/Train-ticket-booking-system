@@ -27,7 +27,7 @@ namespace sjtu {
         a = b;
         b = tmp;
     }
-    double stringToDouble(string str);
+    double stringToDouble(string);
 
     template<class T1, class T2>
     class pair {
@@ -53,6 +53,7 @@ namespace sjtu {
     private:
         char* data;
         int len;
+        int capacity;
         /*
          * 0-base
          * arrayLength = len + 1 for '\0'
@@ -60,61 +61,85 @@ namespace sjtu {
 
     public:
 
-        string():data(nullptr), len(0) {}
+        string():data(nullptr), len(0), capacity(0) {}
 
-        string(const int &len): len(len) {
-            data = new char[len + 1];
+        string(const int &len): len(len), capacity(len << 1) {
+            data = new char[capacity];
             memset(data, 0, sizeof(0));
         }
 
-        string(char* ch){
-            len = strlen(ch);
-            data = new char[len + 1];
-            memcpy(data, ch, sizeof(char) * (len + 1));
+        string(const char* ch){
+            len = (int)strlen(ch);
+            capacity = len << 1;
+            data = new char[capacity];
+            memcpy(data, ch, sizeof(char) * len);
+            data[len] = 0;
         }
 
-        string(const string &other):len(other.len) {
-            data = new char[len + 1];
-            memcpy(data, other.data, sizeof(char) * (len + 1));
+        string(const string &other):len(other.len), capacity(other.capacity) {
+            data = new char[capacity];
+            memcpy(data, other.data, sizeof(char) * len);
+            data[len] = 0;
         }
 
         string& operator=(const string &other) {
             delete data;
             len = other.len;
-            data = new char[len + 1];
-            memcpy(data, other.data, sizeof(char) * (len + 1));
+            capacity = other.capacity;
+            data = new char[capacity];
+            memcpy(data, other.data, sizeof(char) * len);
+            data[len] = 0;
             return *this;
         }
 
         string& operator+=(const string &other) {
-            char* tmp = new char[len + other.length() + 1];
-            for(int i = 0; i < len; i++)
-                tmp[i] = data[i];
-            for(int i = 0, j = len; i < other.len; i++, j++)
-                tmp[j] = other[i];
-            delete data;
-            data = tmp;
+            if(len + other.len < capacity) {
+                for(int i = 0, j = len; i < other.len; i++, j++)
+                    data[j] = other[i];
+            }
+            else {
+                capacity = (len + other.length()) << 1;
+                auto tmp = new char[capacity];
+                for(int i = 0; i < len; i++)
+                    tmp[i] = data[i];
+                for(int i = 0, j = len; i < other.len; i++, j++)
+                    tmp[j] = other[i];
+                delete data;
+                data = tmp;
+            }
             len += other.length();
+            data[len] = 0;
             return *this;
         }
 
         string& operator+= (const char &ch) {
-            char *tmp = new char[len + 2];
-            memcpy(tmp, data, sizeof(char) * (len + 1));
-            tmp[len] = ch;
+            if(len + 1 < capacity) {
+                data[len] = ch;
+            }
+            else {
+                capacity = (len + 1) << 1;
+                auto tmp = new char[capacity];
+                memcpy(tmp, data, sizeof(char) * (len));
+                tmp[len] = ch;
+                delete data;
+                data = tmp;
+            }
             len++;
-            delete data;
-            data = tmp;
+            data[len] = 0;
             return *this;
         }
 
         bool operator== (const string &other) const{
             if(len != other.len)
-                return 0;
+                return false;
             for(int i = 0; i < len; i++)
                 if(data[i] != other.data[i])
-                    return 0;
-            return 1;
+                    return false;
+            return true;
+        }
+
+        bool operator!= (const string &other) const{
+            return !this->operator==(other);
         }
 
         bool operator< (const string &other) const{
@@ -142,10 +167,11 @@ namespace sjtu {
         }
 
         string get(int l, int r) {
-            char* res = new char[r - l];
+            string res(r - l);
             for(int i = l; i <= r; i++)
                 res[i - l] = data[i];
-            return string(res);
+            res[r - l] = 0;
+            return res;
         }
     };
 
@@ -167,8 +193,62 @@ namespace sjtu {
         time(): hour(-1), mini(-1) {}
         time(int h, int m): hour(h), mini(m) {}
 
-        bool operator< (const time &other) {
+        bool operator< (const time &other) const{
             return hour < other.hour || (hour == other.hour && mini < other.mini);
+        }
+
+        time operator+ (const time &other) const{
+            time res(*this);
+            res += other;
+            return res;
+        }
+
+        time operator- (const time &other) const{
+            time res(*this);
+            res -= other;
+            return res;
+        }
+
+        time operator+= (const time &other) {
+            hour += other.hour;
+            mini += other.mini;
+            hour += mini / 60;
+            mini %= 60;
+            return *this;
+        }
+
+        time operator-= (const time &other) {
+            hour -= other.hour;
+            mini -= other.mini;
+            if(mini < 0) {
+                hour--;
+                mini += 60;
+            }
+            return *this;
+        }
+
+        string out() const{
+            string res;
+            if(hour == -1)
+                return "xx:xx";
+            if(hour < 10) {
+                res += '0';
+                res += hour - '0';
+            }
+            else {
+                res += (hour / 10) - '0';
+                res += (hour % 10) - '0';
+            }
+            res += ":";
+            if(mini < 10) {
+                res += '0';
+                res += mini - '0';
+            }
+            else {
+                res += (mini / 10) - '0';
+                res += (mini % 10) - '0';
+            }
+            return res;
         }
     };
 

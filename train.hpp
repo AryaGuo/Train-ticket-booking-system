@@ -27,23 +27,13 @@
 namespace sjtu
 {
 
-    class train;
-
-    string getTime(train const &tr, string date, string const &loc) {
-        //TODO
-    }
-
-    double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
-        //TODO
-    }
-
     class train {
 
     public:
         string id, name;
         char catalog;
         int stationNum, priceNum;
-        string* stationName; //[staionNum]
+        string* stationName; //[stationNum]
         string* priceName;   //[priceNum]
         time *arriveTime, *startTime, *stopover;    //[stationNum]
         double **price; //[stationNum] * [priceNum]
@@ -135,6 +125,44 @@ namespace sjtu
             }
         }
         return is;
+    }
+
+
+    /*
+     * date + time
+     * len = 16
+     * 2018-03-28 08:00
+     */
+    string getStartTime(train const &tr, string date, string const &loc) {
+        string res(date);
+        for(int i = 0; i < tr.stationNum; ++i)
+            if(tr.stationName[i] == loc) {
+                return res += tr.startTime[i].out();
+            }
+            //TODO
+    }
+
+    string getArriveTime(train const &tr, string date, string const &loc) {
+        string res(date);
+        for(int i = 0; i < tr.stationNum; ++i)
+            if(tr.stationName[i] == loc) {
+                return res += tr.arriveTime[i].out();
+            }
+            //TODO
+    }
+
+    double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
+        int pos1 = 0, pos2 = 0, sum = 0;
+        for(int i = 0; i < tr.stationNum; ++i) {
+            if(tr.stationName[i] == loc1)
+                pos1 = i;
+            if(tr.stationName[i] == loc2)
+                pos2 = i;
+        }
+        for(int i = pos1 + 1; i <= pos2; i++) {
+            sum += tr.price[i][priceId];
+        }
+        return sum;
     }
 
 }

@@ -43,7 +43,7 @@ namespace sjtu {
 
         void push(const T &obj) {
             sz++;
-            auto tmp = new T(obj);
+            auto *tmp = new node(obj);
             if(sz == 0) {
                 head = tail = tmp;
             }
@@ -67,7 +67,7 @@ namespace sjtu {
 
         T front() {
             if(head)
-                return *head;
+                return *head->data;
             throw invalid_operation();
         }
 

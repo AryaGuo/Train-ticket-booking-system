@@ -16,7 +16,7 @@
 #include "map.hpp"
 #include "queue.hpp"
 #include "constant.h"
-/*
+
 typedef sjtu::string string;
 typedef sjtu::train train;
 typedef sjtu::ticket ticket;
@@ -24,14 +24,6 @@ typedef sjtu::map <string, train> trainSet;
 typedef sjtu::map <string, ticket> ticketSet;
 typedef sjtu::user user;
 typedef sjtu::time Time;
- */
-
-typedef sjtu::train train;
-typedef sjtu::ticket ticket;
-typedef sjtu::map <string, train> trainSet;
-typedef sjtu::map <string, ticket> ticketSet;
-//typedef user user;
-typedef time Time;
 
 const int CAPACITY = sjtu::TRAIN_CAPACITY;
 
@@ -52,7 +44,6 @@ const int CAPACITY = sjtu::TRAIN_CAPACITY;
     orderIdTicket   < OrderId, ticket >
  */
 
-//TODO:cmp
 sjtu::BPlusTree <int, user> idUser("user");
 sjtu::BPlusTree <string, train> sale("sale");
 sjtu::BPlusTree <string, train> nSale("nsale");
@@ -60,7 +51,7 @@ sjtu::BPlusTree <string, sjtu::map<string, train> > locTrain("locTrain");
 sjtu::BPlusTree <sjtu::tuple<string, string, char>, trainSet> direct("direct");
 sjtu::BPlusTree <sjtu::tuple<string, string, char>, sjtu::tuple<Time, train, train> > transfer("transfer");
 sjtu::BPlusTree <sjtu::tuple<string, string, string>, ticketSet> trKindTicket("trKindTicket");
-sjtu::BPlusTree <sjtu::tuple<string, string, string>, ticketSet> trCatTicket("trCatTicket");
+sjtu::BPlusTree <sjtu::tuple<string, string, char>, ticketSet> trCatTicket("trCatTicket");
 sjtu::BPlusTree <sjtu::tuple<int, string, char>, ticketSet> idTicket("idTicket");
 sjtu::BPlusTree <sjtu::tuple<int, string, string, string, string, string>, int> infoOrderId("infoOrderId");
 sjtu::BPlusTree <int, ticket> orderIdTicket("orderIdTicket");
@@ -80,14 +71,12 @@ bool intersect(ticket const &tic, string const &loc1, string const &loc2)
         else if(now == tic.loc2)
             t = i;
     }
-    if(r < s || l > t)
-        return false;
-    return true;
+    return !(r < s || l > t);
 }
 
 int Register(user &u)
 {
-    int id = ++sjtu::user::idCnt;
+    int id = ++user::idCnt;
     u.id = id;
     if(id == 2018)
         u.priv = 2;
@@ -104,6 +93,17 @@ bool queryProfile(int const &id, user &u)
         u = res.second;
         return true;
     }
+}
+
+bool login(int const &id, string const &pwd)
+{
+    user u;
+    if(!queryProfile(id, u))
+        return false;
+    if(u.pwd != pwd)
+        return false;
+    u.loginSta = true;
+    return true;
 }
 
 bool modifyProfile(int const &id, user &u)  //u with name, pwd, email, phone.
@@ -133,8 +133,8 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
     for(int i = 0; i < len; ++i) {
         char cat = catalog[i];
         auto allTrain = direct.find(sjtu::tuple<string, string, char>(loc1, loc2, cat)).second;
-        for(auto it = allTrain.begin(); it != allTrain.end(); ++it) {   //guarantees the order of trains
-            train tr = it->second;
+        for (auto &it: allTrain) {   //guarantees the order of trains
+            train tr = it.second;
             int sold = 0;
             sjtu::map <string, int> used;
             auto allTicket = trCatTicket.find(sjtu::tuple<string, string, char>(tr.getId(), date, cat)).second;
@@ -154,7 +154,7 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
     while(!que.empty()) {
         auto tr = que.front().first;
         auto used = que.front().second;
-        std::cout << tr.id << ' ' << loc1 << ' ' << sjtu:::getTime(tr, date, loc1) << ' ' << loc2 << sjtu::getTime(tr, date, loc2);
+        std::cout << tr.id << ' ' << loc1 << ' ' << sjtu::getStartTime(tr, date, loc1) << ' ' << loc2 << sjtu::getArriveTime(tr, date, loc2);
         for(int i = 0; i < tr.priceNum; ++i) {
             int usedTic = used[tr.priceName[i]];
             if(usedTic < CAPACITY) {
@@ -167,7 +167,42 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
 
 void queryTransfer(string const &loc1, string const &loc2, string const &date, string const &catalog)
 {
-    //TODO
+    typedef sjtu::map <string, int> map;
+    int len = catalog.length();
+    sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
+    for(int i = 0; i < len; ++i) {
+        char cat = catalog[i];
+        auto allTrain = direct.find(sjtu::tuple<string, string, char>(loc1, loc2, cat)).second;
+        for (auto &it: allTrain) {   //guarantees the order of trains
+            train tr = it.second;
+            int sold = 0;
+            sjtu::map <string, int> used;
+            auto allTicket = trCatTicket.find(sjtu::tuple<string, string, char>(tr.getId(), date, cat)).second;
+            for (auto &j: allTicket) {
+                ticket tic = j.second;
+                if(intersect(tic, loc1, loc2)) {
+                    if(used[tic.getKind()] += tic.getNum() == CAPACITY)
+                        sold++;
+                }
+            }
+            if(sold < tr.priceNum) {
+                que.push(sjtu::pair<train, sjtu::map <string, int> >(tr, used));
+            }
+        }
+    }
+    std::cout << que.size() << std::endl;
+    while(!que.empty()) {
+        auto tr = que.front().first;
+        auto used = que.front().second;
+        std::cout << tr.id << ' ' << loc1 << ' ' << sjtu::getStartTime(tr, date, loc1) << ' ' << loc2 << sjtu::getArriveTime(tr, date, loc2);
+        for(int i = 0; i < tr.priceNum; ++i) {
+            int usedTic = used[tr.priceName[i]];
+            if(usedTic < CAPACITY) {
+                std::cout << ' ' << tr.priceName[i] << ' ' << CAPACITY - usedTic << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
+            }
+            std::cout << std::endl;
+        }
+    }
 }
 
 void insertOrder(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind)
@@ -208,8 +243,8 @@ void insertOrder(int const &id, int const &num, string const &trainId, string co
 bool buyTicket(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind) {
     int used = 0;
     auto allTicket = trKindTicket.find(sjtu::tuple<string, string, string>(trainId, date, kind)).second;
-    for(auto it = allTicket.begin(); it != allTicket.end(); ++it) {
-        auto ticket = it->second;
+    for (auto &it: allTicket) {
+        auto ticket = it.second;
         if(intersect(ticket, loc1, loc2)) {
             used += ticket.getNum();
         }
@@ -228,12 +263,12 @@ bool queryOrder(int const &id, string const &date, char const &catalog)
         return false;
     auto ticketSet = tmp.second;
     std::cout << ticketSet.size() << std::endl;
-    for(auto it = ticketSet.begin(); it != ticketSet.end(); ++it) {
-        auto tic = it->second;
+    for (auto &it: ticketSet) {
+        auto tic = it.second;
         auto tr = sale.find(tic.trainId).second;
         std::cout << tic.trainId << ' ';
-        std::cout << tic.loc1 << ' ' << sjtu::getTime(tr, date, tic.loc1) << ' ';
-        std::cout << tic.loc2 << ' ' << sjtu::getTime(tr, date, tic.loc2) << ' ';
+        std::cout << tic.loc1 << ' ' << sjtu::getStartTime(tr, date, tic.loc1) << ' ';
+        std::cout << tic.loc2 << ' ' << sjtu::getArriveTime(tr, date, tic.loc2) << ' ';
         for(int j = 0; j < tr.priceNum; ++j) {
             std::cout << tr.priceName[j] << ' ';
             if(tr.priceName[j] == tic.kind)
@@ -272,7 +307,27 @@ bool addTrain(train const &tr)
 
 Time calTime(train const &tr1, train const &tr2, string const &loc0, string const &loc1, string const &loc2)
 {
-
+    Time t[4];
+    for(int i = 0; i < tr1.stationNum; ++i) {
+        if(tr1.stationName[i] == loc0) {
+            t[0] = tr1.startTime[i];
+        }
+        else if(tr1.stationName[i] == loc1) {
+            t[1] = tr1.arriveTime[i];
+        }
+    }
+    for(int i = 0; i < tr2.stationNum; ++i) {
+        if(tr2.stationName[i] == loc1) {
+            t[2] = tr2.startTime[i];
+        }
+        else if(tr2.stationName[i] == loc2) {
+            t[3] = tr2.arriveTime[i];
+        }
+    }
+    Time res(0, 0), day(24, 0);
+    for(int i = 0; i < 3; ++i)
+        res += t[i] < t[i + 1] ? t[i + 1] - t[i] : t[i + 1] - t[i] + day;
+    return res;
 }
 
 bool saleTrain(string const &id) {
@@ -303,8 +358,8 @@ bool saleTrain(string const &id) {
     for (int i = 0; i < tr.stationNum; ++i) {
         string loc1 = tr.stationName[i];
         auto trainS = locTrain.find(loc1).second;
-        for (auto it = trainS.begin(); it != trainS.end(); ++it) {
-            auto tr0 = it->second;
+        for (auto &it: trainS) {
+            auto tr0 = it.second;
             for (int k = 0; k < tr0.stationNum; ++k) {
                 string loc0 = tr0.stationName[k];
                 if (loc0 == loc1) break;
@@ -326,14 +381,13 @@ bool saleTrain(string const &id) {
             }
         }
     }
-
     for (int i = 0; i < tr.stationNum; ++i) {
         string loc1 = tr.stationName[i];
         for (int j = i + 1; j < tr.stationNum; ++j) {
             string loc2 = tr.stationName[j];
             auto trainS = locTrain.find(loc2).second;
-            for (auto it = trainS.begin(); it != trainS.end(); ++it) {
-                auto tr1 = it->second;
+            for (auto &it: trainS) {
+                auto tr1 = it.second;
                 for (int k = tr1.stationNum; k > 0; --k) {
                     string loc3 = tr1.stationName[k];
                     if (loc3 == loc1) break;
@@ -353,6 +407,7 @@ bool saleTrain(string const &id) {
             }
         }
     }
+    return true;
 }
 
 bool queryTrain(string const &id, train &T)
@@ -392,6 +447,14 @@ void Register()
     user u;
     std::cin >> u;
     std::cout << Register(u) << std::endl;
+}
+
+void login()
+{
+    int id;
+    string pwd;
+    std::cin >> id >> pwd;
+    std::cout << login(id, pwd) << std::endl;
 }
 
 void queryProfile()
@@ -529,8 +592,9 @@ void init()
 
 int main()
 {
-    string opt[16];
+    const int funcNum = 17;
     string comm;
+    string opt[funcNum];
     opt[0] = string("register");
     opt[1] = string("query_profile");
     opt[2] = string("modify_profile");
@@ -546,19 +610,20 @@ int main()
     opt[12] = string("delete_train");
     opt[13] = string("modify_train");
     opt[14] = string("clean");
-    opt[15] = string("exit");
-    void (*func[16])() = {Register, queryProfile, modifyProfile, modifyPrivilege, queryTicket, queryTransfer, buyTicket,
-                          queryOrder, refundTicket, addTrain, saleTrain, queryTrain, deleteTrain, modifyTrain, clean};
+    opt[15] = string("login");
+    opt[16] = string("exit");
+    void (*func[funcNum])() = {Register, queryProfile, modifyProfile, modifyPrivilege, queryTicket, queryTransfer, buyTicket,
+                          queryOrder, refundTicket, addTrain, saleTrain, queryTrain, deleteTrain, modifyTrain, clean, login};
     init();
     while(true)
     {
         std::cin >> comm;
-        for(int i = 0; i < 15; i++)
+        for(int i = 0; i < funcNum - 1; i++)
             if(comm == opt[i]) {
                 func[i];
                 break;
             }
-        if(comm == opt[15]) {
+        if(comm == opt[16]) {
             std::cout << "BYE" << std::endl;
             break;
         }
