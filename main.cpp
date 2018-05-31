@@ -4,9 +4,8 @@
 
 #include <iostream>
 #include <cstdio>
-//#include <cstring>
 #include <cmath>
-//#include <ctime>
+#include <cstdlib>
 #include "utility.hpp"
 #include "user.hpp"
 #include "train.hpp"
@@ -48,12 +47,12 @@ sjtu::BPlusTree <int, user> idUser("user");
 sjtu::BPlusTree <string, train> sale("sale");
 sjtu::BPlusTree <string, train> nSale("nsale");
 sjtu::BPlusTree <string, sjtu::map<string, train> > locTrain("locTrain");
-sjtu::BPlusTree <sjtu::tuple<string, string, char>, trainSet> direct("direct");
-sjtu::BPlusTree <sjtu::tuple<string, string, char>, sjtu::tuple<Time, train, train> > transfer("transfer");
-sjtu::BPlusTree <sjtu::tuple<string, string, string>, ticketSet> trKindTicket("trKindTicket");
-sjtu::BPlusTree <sjtu::tuple<string, string, char>, ticketSet> trCatTicket("trCatTicket");
-sjtu::BPlusTree <sjtu::tuple<int, string, char>, ticketSet> idTicket("idTicket");
-sjtu::BPlusTree <sjtu::tuple<int, string, string, string, string, string>, int> infoOrderId("infoOrderId");
+sjtu::BPlusTree <sjtu::tuple3<string, string, char>, trainSet> direct("direct");
+sjtu::BPlusTree <sjtu::tuple3<string, string, char>, sjtu::tuple3<Time, train, train> > transfer("transfer");
+sjtu::BPlusTree <sjtu::tuple3<string, string, string>, ticketSet> trKindTicket("trKindTicket");
+sjtu::BPlusTree <sjtu::tuple3<string, string, char>, ticketSet> trCatTicket("trCatTicket");
+sjtu::BPlusTree <sjtu::tuple3<int, string, char>, ticketSet> idTicket("idTicket");
+sjtu::BPlusTree <sjtu::tuple6<int, string, string, string, string, string>, int> infoOrderId("infoOrderId");
 sjtu::BPlusTree <int, ticket> orderIdTicket("orderIdTicket");
 
 bool intersect(ticket const &tic, string const &loc1, string const &loc2)
@@ -132,12 +131,12 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
     sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
     for(int i = 0; i < len; ++i) {
         char cat = catalog[i];
-        auto allTrain = direct.find(sjtu::tuple<string, string, char>(loc1, loc2, cat)).second;
+        auto allTrain = direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
         for (auto &it: allTrain) {   //guarantees the order of trains
             train tr = it.second;
             int sold = 0;
             sjtu::map <string, int> used;
-            auto allTicket = trCatTicket.find(sjtu::tuple<string, string, char>(tr.getId(), date, cat)).second;
+            auto allTicket = trCatTicket.find(sjtu::tuple3<string, string, char>(tr.getId(), date, cat)).second;
             for(auto j = allTicket.begin(); j != allTicket.end(); ++j) {
                 ticket tic = j->second;
                 if(intersect(tic, loc1, loc2)) {
@@ -172,12 +171,12 @@ void queryTransfer(string const &loc1, string const &loc2, string const &date, s
     sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
     for(int i = 0; i < len; ++i) {
         char cat = catalog[i];
-        auto allTrain = direct.find(sjtu::tuple<string, string, char>(loc1, loc2, cat)).second;
+        auto allTrain = direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
         for (auto &it: allTrain) {   //guarantees the order of trains
             train tr = it.second;
             int sold = 0;
             sjtu::map <string, int> used;
-            auto allTicket = trCatTicket.find(sjtu::tuple<string, string, char>(tr.getId(), date, cat)).second;
+            auto allTicket = trCatTicket.find(sjtu::tuple3<string, string, char>(tr.getId(), date, cat)).second;
             for (auto &j: allTicket) {
                 ticket tic = j.second;
                 if(intersect(tic, loc1, loc2)) {
@@ -207,7 +206,7 @@ void queryTransfer(string const &loc1, string const &loc2, string const &date, s
 
 void insertOrder(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind)
 {
-    auto key = sjtu::tuple<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind);
+    auto key = sjtu::tuple6<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind);
     auto tmp = infoOrderId.find(key);
     auto orderId = tmp.second;
     if(!tmp.first) {
@@ -219,19 +218,19 @@ void insertOrder(int const &id, int const &num, string const &trainId, string co
         auto toInsert = sjtu::pair<string, ticket>(trainId ,newTic); //TODO: ticketSet: orderId or ticket ??
         orderIdTicket.insert(cnt, newTic);
 
-        auto ticSet1 = trKindTicket.find(sjtu::tuple<string, string, string>(trainId, date, kind)).second;
+        auto ticSet1 = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind)).second;
         ticSet1.insert(toInsert);
-        trKindTicket.modify(sjtu::tuple<string, string, string>(trainId, date, kind), ticSet1);
+        trKindTicket.modify(sjtu::tuple3<string, string, string>(trainId, date, kind), ticSet1);
 
-        auto ticSet2 = trCatTicket.find(sjtu::tuple<string, string, char>(trainId, date, catalog)).second;
+        auto ticSet2 = trCatTicket.find(sjtu::tuple3<string, string, char>(trainId, date, catalog)).second;
         ticSet2.insert(toInsert);
-        trCatTicket.modify(sjtu::tuple<string, string, char>(trainId, date, catalog), ticSet2);
+        trCatTicket.modify(sjtu::tuple3<string, string, char>(trainId, date, catalog), ticSet2);
 
-        auto ticSet3 = idTicket.find(sjtu::tuple<int, string, char>(id, date, catalog)).second;
+        auto ticSet3 = idTicket.find(sjtu::tuple3<int, string, char>(id, date, catalog)).second;
         ticSet3.insert(toInsert);
-        idTicket.modify(sjtu::tuple<int, string, char>(id, date, catalog), ticSet3);
+        idTicket.modify(sjtu::tuple3<int, string, char>(id, date, catalog), ticSet3);
 
-        infoOrderId.insert(sjtu::tuple<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind), orderId);
+        infoOrderId.insert(sjtu::tuple6<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind), orderId);
     }
     else {
         auto tic = orderIdTicket.find(orderId).second;
@@ -242,7 +241,7 @@ void insertOrder(int const &id, int const &num, string const &trainId, string co
 
 bool buyTicket(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind) {
     int used = 0;
-    auto allTicket = trKindTicket.find(sjtu::tuple<string, string, string>(trainId, date, kind)).second;
+    auto allTicket = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind)).second;
     for (auto &it: allTicket) {
         auto ticket = it.second;
         if(intersect(ticket, loc1, loc2)) {
@@ -258,7 +257,7 @@ bool buyTicket(int const &id, int const &num, string const &trainId, string cons
 
 bool queryOrder(int const &id, string const &date, char const &catalog)
 {
-    auto tmp = idTicket.find(sjtu::tuple<int, string, char>(id, date, catalog));
+    auto tmp = idTicket.find(sjtu::tuple3<int, string, char>(id, date, catalog));
     if(!tmp.first)
         return false;
     auto ticketSet = tmp.second;
@@ -285,7 +284,7 @@ bool queryOrder(int const &id, string const &date, char const &catalog)
 
 bool refundTicket(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind)
 {
-    auto tmp = infoOrderId.find(sjtu::tuple<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind));
+    auto tmp = infoOrderId.find(sjtu::tuple6<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind));
     if(!tmp.first)
         return false;
     auto orderId = tmp.second;
@@ -343,7 +342,7 @@ bool saleTrain(string const &id) {
         string loc1 = tr.stationName[i];
         for (int j = i + 1; j < tr.stationNum; ++j) {
             string loc2 = tr.stationName[j];
-            auto key = sjtu::tuple<string, string, char>(loc1, loc2, catalog);
+            auto key = sjtu::tuple3<string, string, char>(loc1, loc2, catalog);
             auto tmp = direct.find(key);
             auto trainS = tmp.second;
             trainS.insert(sjtu::pair<string, train>(id, tr));
@@ -365,16 +364,16 @@ bool saleTrain(string const &id) {
                 if (loc0 == loc1) break;
                 for (int j = i + 1; j < tr.stationNum; ++j) {
                     string loc2 = tr.stationName[j];
-                    auto key = sjtu::tuple<string, string, char>(loc0, loc2, catalog);
+                    auto key = sjtu::tuple3<string, string, char>(loc0, loc2, catalog);
                     auto tmp = transfer.find(key);
                     if (!tmp.first) {
                         transfer.insert(key,
-                                        sjtu::tuple<Time, train, train>(calTime(tr0, tr, loc0, loc1, loc2), tr0, tr));
+                                        sjtu::tuple3<Time, train, train>(calTime(tr0, tr, loc0, loc1, loc2), tr0, tr));
                     } else {
                         auto minTime = tmp.second.head();
                         auto now = calTime(tr0, tr, loc0, loc1, loc2);
                         if (now < minTime) {
-                            transfer.modify(key, sjtu::tuple<Time, train, train>(now, tr0, tr));
+                            transfer.modify(key, sjtu::tuple3<Time, train, train>(now, tr0, tr));
                         }
                     }
                 }
@@ -391,16 +390,16 @@ bool saleTrain(string const &id) {
                 for (int k = tr1.stationNum; k > 0; --k) {
                     string loc3 = tr1.stationName[k];
                     if (loc3 == loc1) break;
-                    auto key = sjtu::tuple<string, string, char>(loc1, loc3, catalog);
+                    auto key = sjtu::tuple3<string, string, char>(loc1, loc3, catalog);
                     auto tmp = transfer.find(key);
                     if (!tmp.first) {
                         transfer.insert(key,
-                                        sjtu::tuple<Time, train, train>(calTime(tr, tr1, loc1, loc2, loc3), tr, tr1));
+                                        sjtu::tuple3<Time, train, train>(calTime(tr, tr1, loc1, loc2, loc3), tr, tr1));
                     } else {
                         auto minTime = tmp.second.head();
                         auto now = calTime(tr, tr1, loc1, loc2, loc3);
                         if (now < minTime) {
-                            transfer.modify(key, sjtu::tuple<Time, train, train>(now, tr, tr1));
+                            transfer.modify(key, sjtu::tuple3<Time, train, train>(now, tr, tr1));
                         }
                     }
                 }
@@ -582,7 +581,16 @@ void modifyTrain()
 
 void clean()
 {
-
+    sale.close_file();
+    nSale.close_file();
+    locTrain.close_file();
+    direct.close_file();
+    transfer.close_file();
+    trKindTicket.close_file();
+    trCatTicket.close_file();
+    idTicket.close_file();
+    infoOrderId.close_file();
+    orderIdTicket.close_file();
 }
 
 void init()
@@ -592,6 +600,7 @@ void init()
 
 int main()
 {
+    freopen("train.in", "r", stdin);
     const int funcNum = 17;
     string comm;
     string opt[funcNum];
@@ -618,15 +627,15 @@ int main()
     while(true)
     {
         std::cin >> comm;
+        if(comm == opt[16]) {
+            std::cout << "BYE" << std::endl;
+            break;
+        }
         for(int i = 0; i < funcNum - 1; i++)
             if(comm == opt[i]) {
                 func[i];
                 break;
             }
-        if(comm == opt[16]) {
-            std::cout << "BYE" << std::endl;
-            break;
-        }
     }
     return 0;
 }

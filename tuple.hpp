@@ -5,6 +5,74 @@
 
 namespace sjtu
 {
+    template <class T1, class T2, class T3>
+    class tuple3 {
+
+    public:
+        T1 data1;
+        T2 data2;
+        T3 data3;
+
+        tuple3() {}
+        tuple3(const T1& a, const T2& b, const T3& c):data1(a), data2(b), data3(c) {}
+        tuple3(const tuple3& other):data1(other.data1), data2(other.data2), data3(other.data3) {}
+
+        bool operator==(const tuple3& other) const{
+            return data1 == other.data1 && data2 == other.data2 && data3 == other.data3;
+        }
+        bool operator<(const tuple3& other) const{
+            if(data1 != other.data1)
+                return data1 < other.data1;
+            if(data2 != other.data2)
+                return data2 < other.data2;
+            return data3 < other.data3;
+        }
+
+        T1 head() {
+            return data1;
+        }
+    };
+
+    template <class T1, class T2, class T3, class T4, class T5, class T6>
+    class tuple6 {
+
+    public:
+        T1 data1;
+        T2 data2;
+        T3 data3;
+        T4 data4;
+        T5 data5;
+        T6 data6;
+
+        tuple6() {}
+        tuple6(const T1& a, const T2& b, const T3& c, const T4& d, const T5& e, const T6& f):
+                data1(a), data2(b), data3(c), data4(d), data5(e), data6(f) {}
+        tuple6(const tuple6& other):
+                data1(other.data1), data2(other.data2), data3(other.data3), data4(other.data4), data5(other.data5), data6(other.data6) {}
+
+        bool operator==(const tuple6& other) const{
+            return data1 == other.data1 && data2 == other.data2 && data3 == other.data3 && data4 == other.data4
+                   && data5 == other.data5 && data6 == other.data6;
+        }
+        bool operator<(const tuple6& other) const{
+            if(data1 != other.data1)
+                return data1 < other.data1;
+            if(data2 != other.data2)
+                return data2 < other.data2;
+            if(data3 != other.data3)
+             return data3 < other.data3;
+            if(data4 != other.data4)
+                return data4 < other.data4;
+            if(data5 != other.data5)
+                return data5 < other.data5;
+            return data6 < other.data6;
+        }
+
+        T1 head() {
+            return data1;
+        }
+    };
+
     // =============== tuple 存储不同类型的数据 ======================//
     template<typename... TList> class tuple;
 
