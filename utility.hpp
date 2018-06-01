@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <iostream>
+#include "exceptions.hpp"
 
 namespace sjtu {
 
@@ -151,10 +152,14 @@ namespace sjtu {
         }
 
         char& operator[] (const int &i) {
+            if(i < 0 || i >= len)
+                throw sjtu::index_out_of_bound();
             return data[i];
         }
 
         char operator[] (const int &i) const {
+            if(i < 0 || i >= len)
+                throw sjtu::index_out_of_bound();
             return data[i];
         }
 
