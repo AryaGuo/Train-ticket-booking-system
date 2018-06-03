@@ -21,6 +21,7 @@ namespace sjtu {
     const int maxnum_ticket = 5;                ///  ticket_type            ��󳤶� (��Ȼ��Щ����д�ţ���û���õ�)
 
     const int TRAIN_CAPACITY = 2000;
+    const int STRING_LEN = 50;
 };
 
 #endif

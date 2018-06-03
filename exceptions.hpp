@@ -36,5 +36,9 @@ namespace sjtu {
 	class invalid_operation : public exception {
 
 	};
+
+	class overflow : public exception {
+
+	};
 }
 #endif

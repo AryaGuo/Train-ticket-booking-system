@@ -4,6 +4,7 @@
 #include <cstring>
 #include <iostream>
 #include "exceptions.hpp"
+#include "constant.h"
 
 namespace sjtu {
 
@@ -54,78 +55,54 @@ namespace sjtu {
     private:
         char* data;
         int len;
-        int capacity;
-        /*
-         * 0-base
-         * arrayLength = len + 1 for '\0'
-         */
+        static int const capacity = STRING_LEN;
 
     public:
 
-        string():data(nullptr), len(0), capacity(0) {}
-
-        string(const int &len): len(len), capacity(len << 1) {
+        string(): len(0) {
             data = new char[capacity];
-            memset(data, 0, sizeof(0));
+            memset(data, 0, sizeof(data));
         }
 
         string(const char* ch){
             len = (int)strlen(ch);
-            capacity = len << 1;
+            if(len > capacity)
+                throw overflow();
             data = new char[capacity];
             memcpy(data, ch, sizeof(char) * len);
             data[len] = 0;
         }
 
-        string(const string &other):len(other.len), capacity(other.capacity) {
+        string(const string &other):len(other.len) {
             data = new char[capacity];
             memcpy(data, other.data, sizeof(char) * len);
             data[len] = 0;
         }
 
         string& operator=(const string &other) {
+            if(this == &other)
+                return *this;
             delete data;
-            len = other.len;
-            capacity = other.capacity;
             data = new char[capacity];
-            memcpy(data, other.data, sizeof(char) * len);
-            data[len] = 0;
+            len = other.len;
+            memcpy(data, other.data, sizeof(char) * capacity);
             return *this;
         }
 
         string& operator+=(const string &other) {
-            if(len + other.len < capacity) {
-                for(int i = 0, j = len; i < other.len; i++, j++)
-                    data[j] = other[i];
-            }
-            else {
-                capacity = (len + other.length()) << 1;
-                auto tmp = new char[capacity];
-                for(int i = 0; i < len; i++)
-                    tmp[i] = data[i];
-                for(int i = 0, j = len; i < other.len; i++, j++)
-                    tmp[j] = other[i];
-                delete data;
-                data = tmp;
-            }
+            if(len + other.len >= capacity)
+                throw overflow();
+            for(int i = 0, j = len; i < other.len; i++, j++)
+                data[j] = other[i];
             len += other.length();
             data[len] = 0;
             return *this;
         }
 
         string& operator+= (const char &ch) {
-            if(len + 1 < capacity) {
-                data[len] = ch;
-            }
-            else {
-                capacity = (len + 1) << 1;
-                auto tmp = new char[capacity];
-                memcpy(tmp, data, sizeof(char) * (len));
-                tmp[len] = ch;
-                delete data;
-                data = tmp;
-            }
-            len++;
+            if(len + 1 >= capacity)
+                throw overflow();
+            data[len++] = ch;
             data[len] = 0;
             return *this;
         }
@@ -134,7 +111,7 @@ namespace sjtu {
             if(len != other.len)
                 return false;
             for(int i = 0; i < len; i++)
-                if(data[i] != other.data[i])
+                if(data[i] != other[i])
                     return false;
             return true;
         }
@@ -172,7 +149,7 @@ namespace sjtu {
         }
 
         string get(int l, int r) {
-            string res(r - l);
+            string res;
             for(int i = l; i <= r; i++)
                 res[i - l] = data[i];
             res[r - l] = 0;
@@ -187,6 +164,7 @@ namespace sjtu {
 
     std::istream &operator>>(std::istream &is, string &obj) {
         is >> obj.data;
+        obj.len = (int)strlen(obj.data);
         return is;
     }
 
@@ -273,7 +251,7 @@ namespace sjtu {
     }
 
     std::istream &operator>>(std::istream &is, time &obj) {
-        string tmp(10);
+        string tmp;
         is >> tmp;
         if(tmp[0] == 'x')
             obj.hour = obj.mini = -1;

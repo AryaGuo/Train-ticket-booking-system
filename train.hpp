@@ -46,6 +46,8 @@ namespace sjtu
         }
 
         train& operator=(const train &other) {
+            if(this == &other)
+                return *this;
             this->~train();
             id = other.id;
             name = other.name;

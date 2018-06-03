@@ -7,6 +7,8 @@ namespace sjtu
 {
     template <class T1, class T2, class T3>
     class tuple3 {
+        friend std::ostream& operator<< (std::ostream &os, const tuple3<T1, T2, T3> &obj);
+        friend std::istream& operator>> (std::istream &is, tuple3<T1, T2, T3> &obj);
 
     public:
         T1 data1;
@@ -33,8 +35,22 @@ namespace sjtu
         }
     };
 
+    template <class T1, class T2, class T3>
+    std::ostream &operator<<(std::ostream &os, const tuple3<T1, T2, T3> &obj) {
+        os << obj.data1 << ' ' << obj.data2 << ' ' << obj.data3;
+        return os;
+    }
+
+    template <class T1, class T2, class T3>
+    std::istream &operator>>(std::istream &is, tuple3<T1, T2, T3> &obj) {
+        is >> obj.data1 >> obj.data2 >> obj.data3;
+        return is;
+    }
+
     template <class T1, class T2, class T3, class T4, class T5, class T6>
     class tuple6 {
+        friend std::ostream& operator<< (std::ostream &os, const tuple6<T1, T2, T3, T4, T5, T6> &obj);
+        friend std::istream& operator>> (std::istream &is, tuple6<T1, T2, T3, T4, T5, T6> &obj);
 
     public:
         T1 data1;
@@ -72,6 +88,18 @@ namespace sjtu
             return data1;
         }
     };
+
+    template <class T1, class T2, class T3, class T4, class T5, class T6>
+    std::istream &operator>>(std::istream &is, tuple6<T1, T2, T3, T4, T5, T6> &obj) {
+        is >> obj.data1 >> obj.data2 >> obj.data3 >> obj.data4 >> obj.data5 >> obj.data6;
+        return is;
+    }
+
+    template <class T1, class T2, class T3, class T4, class T5, class T6>
+    std::ostream &operator<<(std::ostream &os, const tuple6<T1, T2, T3, T4, T5, T6> &obj) {
+        os << obj.data1 << ' ' << obj.data2 << ' ' << obj.data3 << ' ' << obj.data4 << ' ' << obj.data5 << ' ' << obj.data6;
+        return os;
+    }
 
     // =============== tuple 存储不同类型的数据 ======================//
     template<typename... TList> class tuple;

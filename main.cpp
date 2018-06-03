@@ -119,9 +119,8 @@ bool modifyProfile(int const &id, user &u)  //u with name, pwd, email, phone.
 void modifyPrivilege(int const &id, int const &priv)
 {
     auto pre = idUser.find(id).second;
-    user now(pre);
-    now.priv = priv;
-    idUser.modify(id, now);
+    pre.priv = priv;
+    idUser.modify(id, pre);
 }
 
 void queryTicket(string const &loc1, string const &loc2, string const &date, string const &catalog)
@@ -581,26 +580,35 @@ void modifyTrain()
 
 void clean()
 {
-    sale.close_file();
-    nSale.close_file();
-    locTrain.close_file();
-    direct.close_file();
-    transfer.close_file();
-    trKindTicket.close_file();
-    trCatTicket.close_file();
-    idTicket.close_file();
-    infoOrderId.close_file();
-    orderIdTicket.close_file();
+    sale.clean();
+    nSale.clean();
+    locTrain.clean();
+    direct.clean();
+    transfer.clean();
+    trKindTicket.clean();
+    trCatTicket.clean();
+    idTicket.clean();
+    infoOrderId.clean();
+    orderIdTicket.clean();
 }
 
 void init()
 {
-
+    sale.open_file();
+    nSale.open_file();
+    locTrain.open_file();
+    direct.open_file();
+    transfer.open_file();
+    trKindTicket.open_file();
+    trCatTicket.open_file();
+    idTicket.open_file();
+    infoOrderId.open_file();
+    orderIdTicket.open_file();
 }
 
 int main()
 {
-    freopen("train.in", "r", stdin);
+    freopen("register.in", "r", stdin);
     const int funcNum = 17;
     string comm;
     string opt[funcNum];
@@ -626,6 +634,7 @@ int main()
     init();
     while(true)
     {
+        bool flag = false;
         std::cin >> comm;
         if(comm == opt[16]) {
             std::cout << "BYE" << std::endl;
@@ -633,9 +642,14 @@ int main()
         }
         for(int i = 0; i < funcNum - 1; i++)
             if(comm == opt[i]) {
-                func[i];
+                func[i]();
+                flag = 1;
                 break;
             }
+        if(!flag) {
+            std::cout << "WRONG COMMAND" << std::endl;
+        }
     }
+    clean();
     return 0;
 }
