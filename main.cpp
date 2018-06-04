@@ -34,7 +34,7 @@ const int CAPACITY = sjtu::TRAIN_CAPACITY;
 
     locTrain    < loc, trainSet >
     direct      < {loc1, loc2, catalog}, trainSet >	direct
-    transfer    < {loc1, loc2, catalog}, trainPairSet >	transfer
+    transfer    < {loc1, loc2, catalog}, {time, train1, train2} >	transfer
 
     trKindTicket    < {trainId, date, kind}, ticketSet >
     trCatTicket     < {trainId, date, catalog}, ticketSet >
@@ -136,46 +136,6 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
             int sold = 0;
             sjtu::map <string, int> used;
             auto allTicket = trCatTicket.find(sjtu::tuple3<string, string, char>(tr.getId(), date, cat)).second;
-            for(auto j = allTicket.begin(); j != allTicket.end(); ++j) {
-                ticket tic = j->second;
-                if(intersect(tic, loc1, loc2)) {
-                    if(used[tic.getKind()] += tic.getNum() == CAPACITY)
-                        sold++;
-                }
-            }
-            if(sold < tr.priceNum) {
-                que.push(sjtu::pair<train, sjtu::map <string, int> >(tr, used));
-            }
-        }
-    }
-    std::cout << que.size() << std::endl;
-    while(!que.empty()) {
-        auto tr = que.front().first;
-        auto used = que.front().second;
-        std::cout << tr.id << ' ' << loc1 << ' ' << sjtu::getStartTime(tr, date, loc1) << ' ' << loc2 << sjtu::getArriveTime(tr, date, loc2);
-        for(int i = 0; i < tr.priceNum; ++i) {
-            int usedTic = used[tr.priceName[i]];
-            if(usedTic < CAPACITY) {
-                std::cout << ' ' << tr.priceName[i] << ' ' << CAPACITY - usedTic << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
-            }
-            std::cout << std::endl;
-        }
-    }
-}
-
-void queryTransfer(string const &loc1, string const &loc2, string const &date, string const &catalog)
-{
-    typedef sjtu::map <string, int> map;
-    int len = catalog.length();
-    sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
-    for(int i = 0; i < len; ++i) {
-        char cat = catalog[i];
-        auto allTrain = direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
-        for (auto &it: allTrain) {   //guarantees the order of trains
-            train tr = it.second;
-            int sold = 0;
-            sjtu::map <string, int> used;
-            auto allTicket = trCatTicket.find(sjtu::tuple3<string, string, char>(tr.getId(), date, cat)).second;
             for (auto &j: allTicket) {
                 ticket tic = j.second;
                 if(intersect(tic, loc1, loc2)) {
@@ -192,14 +152,29 @@ void queryTransfer(string const &loc1, string const &loc2, string const &date, s
     while(!que.empty()) {
         auto tr = que.front().first;
         auto used = que.front().second;
+        que.pop();
         std::cout << tr.id << ' ' << loc1 << ' ' << sjtu::getStartTime(tr, date, loc1) << ' ' << loc2 << sjtu::getArriveTime(tr, date, loc2);
         for(int i = 0; i < tr.priceNum; ++i) {
-            int usedTic = used[tr.priceName[i]];
-            if(usedTic < CAPACITY) {
-                std::cout << ' ' << tr.priceName[i] << ' ' << CAPACITY - usedTic << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
+            int rem = CAPACITY - used[tr.priceName[i]];
+            //TODO: rem == 0?
+            if(rem > 0) {
+                std::cout << ' ' << tr.priceName[i] << ' ' << rem << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
             }
             std::cout << std::endl;
         }
+    }
+}
+
+void queryTransfer(string const &loc1, string const &loc2, string const &date, string const &catalog)
+{
+    typedef sjtu::map <string, int> map;
+    int len = catalog.length();
+    sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
+    for(int i = 0; i < len; ++i) {
+        char cat = catalog[i];
+        auto trainPairs = transfer.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
+        train tr1 = trainPairs.data2, tr2 = trainPairs.data3;
+        //TODO
     }
 }
 
@@ -643,7 +618,7 @@ int main()
         for(int i = 0; i < funcNum - 1; i++)
             if(comm == opt[i]) {
                 func[i]();
-                flag = 1;
+                flag = true;
                 break;
             }
         if(!flag) {
