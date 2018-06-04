@@ -39,16 +39,45 @@ namespace sjtu
         double **price; //[stationNum] * [priceNum]
 
     public:
-        train() {
-            stationName = nullptr;
+        train():stationNum(0), priceNum(0) {
+            stationName = priceName = nullptr;
             arriveTime = startTime = stopover = nullptr;
             price = nullptr;
+        }
+
+        train(const train &other):
+                id(other.id),name(other.name), catalog(other.catalog), stationNum(other.stationNum), priceNum(other.priceNum)  {
+            stationName = new string[stationNum];
+            priceName = new string[priceNum];
+            arriveTime = new time[stationNum];
+            startTime = new time[stationNum];
+            stopover = new time[stationNum];
+            price = new double* [stationNum];
+            for(int i = 0; i < stationNum; ++i) {
+                stationName[i] = other.stationName[i];
+                arriveTime[i] = other.arriveTime[i];
+                startTime[i] = other.startTime[i];
+                stopover[i] = other.stopover[i];
+                price[i] = new double[priceNum];
+                for(int j = 0; j < priceNum; ++j)
+                    price[i][j] = other.price[i][j];
+            }
+            for(int i = 0; i < priceNum; ++i) {
+                priceName[i] = other.priceName[i];
+            }
         }
 
         train& operator=(const train &other) {
             if(this == &other)
                 return *this;
-            this->~train();
+            delete [] stationName;
+            delete [] priceName;
+            delete [] arriveTime;
+            delete [] startTime;
+            delete [] stopover;
+            for(int i = 0; i < priceNum; i++)
+                delete [] price[i];
+            delete [] price;
             id = other.id;
             name = other.name;
             catalog = other.catalog;
@@ -61,12 +90,16 @@ namespace sjtu
             stopover = new time[stationNum];
             price = new double* [stationNum];
             for(int i = 0; i < stationNum; ++i) {
+                stationName[i] = other.stationName[i];
                 arriveTime[i] = other.arriveTime[i];
                 startTime[i] = other.startTime[i];
                 stopover[i] = other.stopover[i];
                 price[i] = new double[priceNum];
                 for(int j = 0; j < priceNum; ++j)
                     price[i][j] = other.price[i][j];
+            }
+            for(int i = 0; i < priceNum; ++i) {
+                priceName[i] = other.priceName[i];
             }
             return *this;
         }
@@ -80,10 +113,11 @@ namespace sjtu
         }
 
         ~train() {
-            delete stationName;
-            delete arriveTime;
-            delete startTime;
-            delete stopover;
+            delete [] stationName;
+            delete [] priceName;
+            delete [] arriveTime;
+            delete [] startTime;
+            delete [] stopover;
             for(int i = 0; i < priceNum; i++)
                 delete [] price[i];
             delete [] price;
@@ -107,7 +141,7 @@ namespace sjtu
     }
 
     std::istream &operator>>(std::istream &is, train &obj) {
-        char tmp[20];
+        string tmp;
         is >> obj.id >> obj.name >> obj.catalog >> obj.stationNum >> obj.priceNum;
         obj.stationName = new string[obj.stationNum];
         obj.priceName = new string[obj.priceNum];
@@ -129,7 +163,6 @@ namespace sjtu
         return is;
     }
 
-
     /*
      * date + time
      * len = 16
@@ -137,6 +170,7 @@ namespace sjtu
      */
     string getStartTime(train const &tr, string date, string const &loc) {
         string res(date);
+        res += ' ';
         for(int i = 0; i < tr.stationNum; ++i)
             if(tr.stationName[i] == loc) {
                 return res += tr.startTime[i].out();
@@ -146,6 +180,7 @@ namespace sjtu
 
     string getArriveTime(train const &tr, string date, string const &loc) {
         string res(date);
+        res += ' ';
         for(int i = 0; i < tr.stationNum; ++i)
             if(tr.stationName[i] == loc) {
                 return res += tr.arriveTime[i].out();
@@ -154,7 +189,8 @@ namespace sjtu
     }
 
     double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
-        int pos1 = 0, pos2 = 0, sum = 0;
+        int pos1 = 0, pos2 = 0;
+        double sum = 0;
         for(int i = 0; i < tr.stationNum; ++i) {
             if(tr.stationName[i] == loc1)
                 pos1 = i;

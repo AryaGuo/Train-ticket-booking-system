@@ -12,11 +12,7 @@ namespace sjtu
 {
 
     class ticket {
-        friend std::ostream& operator<< (std::ostream &os, const ticket &obj);
-        friend std::istream& operator>> (std::istream &is, ticket &obj);
-
-
-            public:
+    public:
         int userId, orderId, num;
         string trainId, loc1, loc2, date, kind;
         char catalog;
@@ -51,14 +47,6 @@ namespace sjtu
 
     int ticket::orderCnt = 0;
 
-    //TODO
-    std::ostream &operator<<(std::ostream &os, const ticket &obj) {
-        return os;
-    }
-
-    std::istream &operator>>(std::istream &is, ticket &obj) {
-        return is;
-    }
 }
 
 

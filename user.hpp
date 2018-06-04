@@ -45,7 +45,7 @@ public:
 
 };
     std::ostream& operator<< (std::ostream &os, const user &obj) {
-        os << obj.name << obj.email << obj.phone << obj.priv;
+        os << obj.name << ' ' << obj.email << ' ' << obj.phone << ' ' << obj.priv;
         return os;
     }
     std::istream& operator>> (std::istream &is, user &obj) {

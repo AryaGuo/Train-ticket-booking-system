@@ -31,6 +31,8 @@ namespace sjtu {
     }
     double stringToDouble(string);
 
+    bool isDigit(char);
+
     template<class T1, class T2>
     class pair {
     public:
@@ -46,6 +48,10 @@ namespace sjtu {
         pair(const pair<U1, U2> &other) : first(other.first), second(other.second) {}
         template<class U1, class U2>
         pair(pair<U1, U2> &&other) : first(other.first), second(other.second) {}
+
+        bool operator<(const pair<T1, T2> &other) const{
+            return (first < other.first) || (first == other.first && second < other.second);
+        }
     };
 
     class string {
@@ -130,13 +136,13 @@ namespace sjtu {
         }
 
         char& operator[] (const int &i) {
-            if(i < 0 || i >= len)
+            if(i < 0 || i > len)
                 throw sjtu::index_out_of_bound();
             return data[i];
         }
 
         char operator[] (const int &i) const {
-            if(i < 0 || i >= len)
+            if(i < 0 || i > len)
                 throw sjtu::index_out_of_bound();
             return data[i];
         }
@@ -152,9 +158,10 @@ namespace sjtu {
 
         string get(int l, int r) {
             string res;
+            res.len = r - l + 1;
             for(int i = l; i <= r; i++)
                 res[i - l] = data[i];
-            res[r - l] = 0;
+            res[res.len] = 0;
             return res;
         }
     };
@@ -218,20 +225,20 @@ namespace sjtu {
                 return "xx:xx";
             if(hour < 10) {
                 res += '0';
-                res += hour - '0';
+                res += hour + '0';
             }
             else {
-                res += (hour / 10) - '0';
-                res += (hour % 10) - '0';
+                res += (hour / 10) + '0';
+                res += (hour % 10) + '0';
             }
             res += ":";
             if(mini < 10) {
                 res += '0';
-                res += mini - '0';
+                res += mini + '0';
             }
             else {
-                res += (mini / 10) - '0';
-                res += (mini % 10) - '0';
+                res += (mini / 10) + '0';
+                res += (mini % 10) + '0';
             }
             return res;
         }
@@ -265,9 +272,11 @@ namespace sjtu {
     }
 
     double stringToDouble(string str) {
-        int len = str.length(), pos = 1;
+        int len = str.length(), pos = 0;
         double res = 0, base = 1;
-        while(str[pos] != '.' && pos < len)
+        while(pos < len && !isDigit(str[pos]))
+            pos++;
+        while(pos < len && isDigit(str[pos]))
             res = res * 10 + str[pos] - '0', ++pos;
         ++pos;
         while(pos < len) {
@@ -276,6 +285,10 @@ namespace sjtu {
             ++pos;
         }
         return res;
+    }
+
+    bool isDigit(char ch) {
+        return ch >= '0' && ch <= '9';
     }
 }
 

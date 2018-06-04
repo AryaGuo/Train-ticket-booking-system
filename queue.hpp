@@ -40,9 +40,44 @@ namespace sjtu {
 
     public:
         queue():head(nullptr), tail(nullptr), sz(0) {}
+        queue(const queue &other): sz(other.sz) {
+            if(!other.head)
+                return;
+            head = new node(*other.head);
+            tail = head;
+            auto tmp = other.head;
+            while(tmp != other.tail) {
+                auto newNode = new node(*tmp->next);
+                tail->next = newNode;
+                tail = newNode;
+                tmp = tmp->next;
+            }
+            tail->next = nullptr;
+        }
+
+        queue operator=(const queue &other) {
+            if(this == &other)
+                return *this;
+            sz = other.sz;
+            while(head != tail) {
+                auto del = head->data;
+                delete del;
+                head = head->next;
+            }
+            delete head->data;
+            head = new node(*other.head);
+            tail = head;
+            auto tmp = other.head;
+            while(tmp != other.tail) {
+                auto newNode = new node(*tmp->next);
+                tail->next = newNode;
+                tail = newNode;
+                tmp = tmp->next;
+            }
+            tail->next = nullptr;
+        }
 
         void push(const T &obj) {
-            sz++;
             auto *tmp = new node(obj);
             if(sz == 0) {
                 head = tail = tmp;
@@ -51,6 +86,7 @@ namespace sjtu {
                 tail->next = tmp;
                 tail = tmp;
             }
+            sz++;
         }
 
         void pop() {

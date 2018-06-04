@@ -16,25 +16,25 @@ erase(Key\_Type): bool
 - - - -
 idUser      < id, user >
 
-sale        < trainId, train >	sale
-
-nSale       < trainId, train >	notSale
+sale        < trainId, train >
+    
+nSale       < trainId, train >
 
 locTrain    < loc, trainSet >
 
-direct      < {loc1, loc2, catalog}, trainSet >	direct
+direct      < {loc1, loc2, catalog}, trainSet >
 
-transfer    < {loc1, loc2, catalog}, pair<train, train> >	transfer
+transfer    < {loc1, loc2, catalog}, {time, train1, train2} >
 
 trKindTicket    < {trainId, date, kind}, ticketSet >
 
-trCatTicket     < {trainId, date, catalog}, ticketSet >
+trDate          < {trainId, date}, ticketSet >
 
 idTicket        < {id, date, catalog}, ticketSet >
 
 infoOrderId     < {id, trainId, loc1, loc2, date, kind}, OrderId >
 
-orderIdTicket   < orderId, ticket >
+orderIdTicket   < OrderId, ticket >
 - - - -
 # register
 	if 写入用户信息成功
