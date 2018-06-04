@@ -29,7 +29,7 @@ namespace sjtu {
             return _cmp(x, y);
         }
         bool Equal(const Key_Type &x, const Key_Type &y) const{     /// ==
-            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+            if ((Cmp(x, y) || Cmp(y, x))) return 0;
             else return 1;
         }
 
@@ -39,9 +39,10 @@ namespace sjtu {
             return _cmp(x, y);
         }
         bool Equal_child(const addType &x, const addType &y) const{     /// ==
-            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+            if ((Cmp(x, y) || Cmp(y, x))) return 0;
             else return 1;
         }
+
 
 
 

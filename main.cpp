@@ -102,6 +102,7 @@ bool login(int const &id, string const &pwd)
     if(u.pwd != pwd)
         return false;
     u.loginSta = true;
+    idUser.modify(id, u);
     return true;
 }
 
@@ -127,14 +128,14 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
 {
     typedef sjtu::map <string, int> map;
     int len = catalog.length();
-    sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
+    sjtu::queue <sjtu::pair<train, map > > que;
     for(int i = 0; i < len; ++i) {
         char cat = catalog[i];
         auto allTrain = direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
         for (auto &it: allTrain) {   //guarantees the order of trains
             train tr = it.second;
             int sold = 0;
-            sjtu::map <string, int> used;
+            map used;
             auto allTicket = trCatTicket.find(sjtu::tuple3<string, string, char>(tr.getId(), date, cat)).second;
             for (auto &j: allTicket) {
                 ticket tic = j.second;
@@ -144,7 +145,7 @@ void queryTicket(string const &loc1, string const &loc2, string const &date, str
                 }
             }
             if(sold < tr.priceNum) {
-                que.push(sjtu::pair<train, sjtu::map <string, int> >(tr, used));
+                que.push(sjtu::pair<train, map >(tr, used));
             }
         }
     }
@@ -169,7 +170,7 @@ void queryTransfer(string const &loc1, string const &loc2, string const &date, s
 {
     typedef sjtu::map <string, int> map;
     int len = catalog.length();
-    sjtu::queue <sjtu::pair<train, sjtu::map <string, int> > > que;
+    sjtu::queue <sjtu::pair<train, map > > que;
     for(int i = 0; i < len; ++i) {
         char cat = catalog[i];
         auto trainPairs = transfer.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
@@ -182,7 +183,6 @@ void insertOrder(int const &id, int const &num, string const &trainId, string co
 {
     auto key = sjtu::tuple6<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind);
     auto tmp = infoOrderId.find(key);
-    auto orderId = tmp.second;
     if(!tmp.first) {
         //create a new order
         int cnt = ++ticket::orderCnt;
@@ -204,9 +204,10 @@ void insertOrder(int const &id, int const &num, string const &trainId, string co
         ticSet3.insert(toInsert);
         idTicket.modify(sjtu::tuple3<int, string, char>(id, date, catalog), ticSet3);
 
-        infoOrderId.insert(sjtu::tuple6<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind), orderId);
+        infoOrderId.insert(sjtu::tuple6<int, string, string, string, string, string>(id, trainId, loc1, loc2, date, kind), cnt);
     }
     else {
+        auto orderId = tmp.second;
         auto tic = orderIdTicket.find(orderId).second;
         tic.modifyNum(num);
         orderIdTicket.modify(orderId, tic);
@@ -215,11 +216,14 @@ void insertOrder(int const &id, int const &num, string const &trainId, string co
 
 bool buyTicket(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind) {
     int used = 0;
-    auto allTicket = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind)).second;
-    for (auto &it: allTicket) {
-        auto ticket = it.second;
-        if(intersect(ticket, loc1, loc2)) {
-            used += ticket.getNum();
+    auto tmp = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind));
+    if(tmp.first) {
+        auto allTicket = tmp.second;
+        for (auto &it: allTicket) {
+            auto ticket = it.second;
+            if(intersect(ticket, loc1, loc2)) {
+                used += ticket.getNum();
+            }
         }
     }
     if(used < CAPACITY) {
@@ -229,32 +233,43 @@ bool buyTicket(int const &id, int const &num, string const &trainId, string cons
     return false;
 }
 
-bool queryOrder(int const &id, string const &date, char const &catalog)
+bool queryOrder(int const &id, string const &date, string const &catalog)
 {
-    auto tmp = idTicket.find(sjtu::tuple3<int, string, char>(id, date, catalog));
-    if(!tmp.first)
-        return false;
-    auto ticketSet = tmp.second;
-    std::cout << ticketSet.size() << std::endl;
-    for (auto &it: ticketSet) {
-        auto tic = it.second;
-        auto tr = sale.find(tic.trainId).second;
-        std::cout << tic.trainId << ' ';
-        std::cout << tic.loc1 << ' ' << sjtu::getStartTime(tr, date, tic.loc1) << ' ';
-        std::cout << tic.loc2 << ' ' << sjtu::getArriveTime(tr, date, tic.loc2) << ' ';
-        for(int j = 0; j < tr.priceNum; ++j) {
-            std::cout << tr.priceName[j] << ' ';
-            if(tr.priceName[j] == tic.kind)
-                std::cout << tic.num << ' ';
-            else
-                std::cout << "0 ";
-            std::cout << sjtu::getPrice(tr, tic.loc1, tic.loc2, j) << ' ';
-        }
-        std::cout << std::endl;
+    bool flag = false;
+    int len = catalog.length(), sum = 0;
+    sjtu::queue<ticketSet> que;
+    for(int i = 0; i < len; ++i) {
+        char cat = catalog[i];
+        auto tmp = idTicket.find(sjtu::tuple3<int, string, char>(id, date, cat));
+        if(!tmp.first)
+            continue;
+        flag = true;
+        sum += tmp.second.size();
+        que.push(tmp.second);
     }
-    return true;
+    std::cout << sum << std::endl;
+    while(!que.empty()) {
+        auto ticketSet = que.front();
+        que.pop();
+        for (auto &it: ticketSet) {
+            auto tic = it.second;
+            auto tr = sale.find(tic.trainId).second;
+            std::cout << tic.trainId << ' ';
+            std::cout << tic.loc1 << ' ' << sjtu::getStartTime(tr, date, tic.loc1) << ' ';
+            std::cout << tic.loc2 << ' ' << sjtu::getArriveTime(tr, date, tic.loc2) << ' ';
+            for(int j = 0; j < tr.priceNum; ++j) {
+                std::cout << tr.priceName[j] << ' ';
+                if(tr.priceName[j] == tic.kind)
+                    std::cout << tic.num << ' ';
+                else
+                    std::cout << "0 ";
+                std::cout << sjtu::getPrice(tr, tic.loc1, tic.loc2, j) << ' ';
+            }
+            std::cout << std::endl;
+        }
+    }
+    return flag;
 }
-
 
 bool refundTicket(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2, string const &date, string const &kind)
 {
@@ -267,6 +282,7 @@ bool refundTicket(int const &id, int const &num, string const &trainId, string c
         return false;
     tic.modifyNum(-num);
     orderIdTicket.modify(orderId, tic);
+    //TODO
     return true;
 }
 
@@ -377,6 +393,21 @@ bool saleTrain(string const &id) {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    for (int i = 0; i < tr.stationNum; ++i) {
+        string loc = tr.stationName[i];
+        for (int j = i + 1; j < tr.stationNum; ++j) {
+            auto key = loc;
+            auto tmp = locTrain.find(key);
+            auto trainS = tmp.second;
+            trainS.insert(sjtu::pair<string, train>(key, tr));
+            if (tmp.first) {
+                locTrain.modify(key, trainS);
+            } else {
+                locTrain.insert(key, trainS);
             }
         }
     }
@@ -493,8 +524,7 @@ void queryOrder()
 {
     //query_order *id* *date* *catalog*
     int id;
-    string date;
-    char catalog;
+    string date, catalog;
     user u;
     std::cin >> id >> date >> catalog;
     if(!queryOrder(id, date, catalog))
@@ -555,6 +585,7 @@ void modifyTrain()
 
 void clean()
 {
+    idUser.clean();
     sale.clean();
     nSale.clean();
     locTrain.clean();
@@ -569,6 +600,7 @@ void clean()
 
 void init()
 {
+    idUser.open_file();
     sale.open_file();
     nSale.open_file();
     locTrain.open_file();
@@ -583,7 +615,7 @@ void init()
 
 int main()
 {
-    freopen("register.in", "r", stdin);
+    freopen("test.in", "r", stdin);
     const int funcNum = 17;
     string comm;
     string opt[funcNum];
@@ -607,8 +639,10 @@ int main()
     void (*func[funcNum])() = {Register, queryProfile, modifyProfile, modifyPrivilege, queryTicket, queryTransfer, buyTicket,
                           queryOrder, refundTicket, addTrain, saleTrain, queryTrain, deleteTrain, modifyTrain, clean, login};
     init();
-    while(true)
+    int tot = 0;
+    while(tot <= 100000)
     {
+        tot++;
         bool flag = false;
         std::cin >> comm;
         if(comm == opt[16]) {

@@ -61,12 +61,12 @@ namespace sjtu {
 
         string(): len(0) {
             data = new char[capacity];
-            memset(data, 0, sizeof(data));
+            memset(data, 0, sizeof(char) * capacity);
         }
 
         string(const char* ch){
             len = (int)strlen(ch);
-            if(len > capacity)
+            if(len >= capacity)
                 throw overflow();
             data = new char[capacity];
             memcpy(data, ch, sizeof(char) * len);
@@ -85,7 +85,8 @@ namespace sjtu {
             delete data;
             data = new char[capacity];
             len = other.len;
-            memcpy(data, other.data, sizeof(char) * capacity);
+            memcpy(data, other.data, sizeof(char) * len);
+            data[len] = 0;
             return *this;
         }
 
@@ -142,6 +143,7 @@ namespace sjtu {
 
         ~string() {
             delete data;
+            len = 0;
         }
 
         int length() const {

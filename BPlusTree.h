@@ -28,7 +28,7 @@ class BPlusTree
     }
     bool Equal(const Key_Type &x, const Key_Type &y) const      /// ==
     {
-        if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+        if (Cmp(x, y) || Cmp(y, x)) return 0;
         else return 1;
     }
 
@@ -40,7 +40,7 @@ class BPlusTree
     }
     bool Equal_child(const addType &x, const addType &y) const      /// ==
     {
-        if (!(Cmp(x, y) || Cmp(y, x))) return 0;
+        if (Cmp(x, y) || Cmp(y, x)) return 0;
         else return 1;
     }
 
@@ -355,25 +355,39 @@ private:
 
         L_next.keys.assign(L.keys, mid, L.keys.size());
         L_next.vals.assign(L.vals, mid, L.vals.size());
-
+        //std::cout<<"assign\n";
         L.keys.shorten_len(mid);
         L.vals.shorten_len(mid);
     }
     bool insert_in_leaf(Node &cur, const Key_Type &K, const Value_Type &V)
     {
         int i = cur.search_sup(K);
-        if (i != -1 && i != 1 && cur.keys[i - 1] == K)
-            return false;
+       // std::cout<<"search_sup\n";
         if (i == -1)
         {
+            if( Equal(cur.keys[cur.keys.size() - 1] , K))
+            {
+                //std::cout<<"-1!\n";
+                cur.vals[cur.vals.size() - 1] = V;
+                return true;
+            }
+            // {
             cur.keys.push_back(K);
             cur.vals.push_back(V);
+            return true;
+
         }
-        else
+        if(cur.keys[i - 1] == K)
         {
-            cur.keys.insert(i, K);
-            cur.vals.insert(i, V);
+
+            //std::cout<<"inthis\n";
+            //std::cout<<cur.vals[i-1]<<' '<<V<<'\n';
+            cur.vals[i - 1] = V;
+            //std::cout<<cur.vals[i-1]<<' '<<V<<'\n';
+            return true;
         }
+        cur.keys.insert(i, K);
+        cur.vals.insert(i, V);
         return true;
     }
 
@@ -381,7 +395,7 @@ private:
     {
         if (cur.isLeaf)
         {
-
+           // std::cout<<"isleaf\n";
             bool success = insert_in_leaf(cur, K, V);
 
             return retT(success, success);
@@ -410,6 +424,7 @@ private:
 
                 else
                 {
+                   // std::cout<<".size()>leaf_degree\n";
                     Node &newLeaf = pool[cnt++];
                     bm.append_block(newLeaf, true);
 
@@ -574,7 +589,7 @@ public:
 
         if (bm.root_off == -1)
         {
-          //  std::cout<<"root_off == -1 "<<K<<' '<<V<<'\n';
+           // std::cout<<"root_off == -1 "<<K<<' '<<V<<'\n';
             bm.append_block(root, true);     ///什么都没有
 
             root.keys.push_back(K);
@@ -595,7 +610,7 @@ public:
         if (!ret_info.success)
         {
             cnt--;
-           // std::cout<<"false "<<K<<' '<<V<<'\n';
+//            std::cout<<"false "<<K<<' '<<V<<'\n';
             return false;                               /** 真的false就很尴尬了 */
         }
         /**考虑是否调整树 spilt 或者加树高*/
@@ -606,12 +621,16 @@ public:
 
                 if (root.keys.size() > leaf_degree)
                 {
+                 //   std::cout << root.keys.size() << ' ' << "enter\n";
+                   // std::cout<<">leaf degree\n";
                     Node &newLeaf = pool[cnt++];
                     Node &newRoot = pool[cnt++];
-
+                  //  std::cout<<"newleaf & newroot\n";
                     bm.append_block(newLeaf, true);
-                    split_leaf(root, newLeaf);
 
+                   // std::cout<<"append_block(newleaf)\n";
+                    split_leaf(root, newLeaf);
+                   // std::cout<<"spilt_leaf\n";
                     newLeaf.next = root.next;
                     root.next = newLeaf.address;
                     if (bm.tail_off == root.address)
@@ -628,7 +647,7 @@ public:
                     bm.write_block(newLeaf);
                     bm.write_block(newRoot);
                     cnt -= 3;
-                    //std::cout<<"is leaf  > degree"<<K<<' '<<V<<'\n';
+                   // std::cout<<"is leaf  > degree"<<K<<' '<<V<<'\n';
                     return true;
                 }
                 /**否则直接写进去就好了*/
@@ -639,7 +658,7 @@ public:
                         bm.write_block(root);
                     }
                     cnt--;
-                   // std::cout<<"is leaf <= degree "<<K<<' '<<V<<'\n';
+                  //  std::cout<<"is leaf <= degree "<<K<<' '<<V<<'\n';
                     return true;
                 }
             }
@@ -665,7 +684,7 @@ public:
                     bm.write_block(newBranch);
                     bm.write_block(newRoot);
                     cnt -= 3;
-                    std::cout<<"not leaf >=degree"<<K<<' '<<V<<'\n';
+                    //std::cout<<"not leaf >=degree"<<K<<' '<<V<<'\n';
                     return true;
                 }
                 else
@@ -674,7 +693,7 @@ public:
                     {
                         bm.write_block(root);
                     }
-                    std::cout<<"not leaf <degree "<<K<<' '<<V<<'\n';
+                  //  std::cout<<"not leaf <degree "<<K<<' '<<V<<'\n';
                     cnt--;
                     return true;
                 }
