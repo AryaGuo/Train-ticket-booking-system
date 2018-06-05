@@ -73,7 +73,11 @@ else	return 0
 					这趟车的某kind票数 -= num
 
 # query\_transfer
-同上
+	for catalogSet
+		for 包含loc1的trainSet1
+			for 包含loc2的trainSet2
+				for tr1 in trainSet1
+					for tr2 in trainSet2
 # buy\_ticket(id, num, train\_id, loc1, loc2, date, ticket\_kind)
 	查找ticket中所有{trainId, date, kind}的购票记录
 			for ticketSet

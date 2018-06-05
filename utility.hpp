@@ -40,7 +40,7 @@ namespace sjtu {
         T2 second;
         constexpr pair() : first(), second() {}
         pair(const pair &other) = default;
-        pair(pair &&other) = default;
+        //pair(pair &&other) = default;
         pair(const T1 &x, const T2 &y) : first(x), second(y) {}
         template<class U1, class U2>
         pair(U1 &&x, U2 &&y) : first(x), second(y) {}
@@ -51,6 +51,10 @@ namespace sjtu {
 
         bool operator<(const pair<T1, T2> &other) const{
             return (first < other.first) || (first == other.first && second < other.second);
+        }
+
+        bool operator==(const pair<T1, T2> &other) const{
+            return first == other.first && second == other.second;
         }
     };
 
@@ -88,8 +92,8 @@ namespace sjtu {
         string& operator=(const string &other) {
             if(this == &other)
                 return *this;
-            delete data;
-            data = new char[capacity];
+            //delete data;
+            //data = new char[capacity];
             len = other.len;
             memcpy(data, other.data, sizeof(char) * len);
             data[len] = 0;
@@ -149,7 +153,6 @@ namespace sjtu {
 
         ~string() {
             delete data;
-            len = 0;
         }
 
         int length() const {

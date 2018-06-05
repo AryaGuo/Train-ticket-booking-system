@@ -121,7 +121,8 @@ namespace sjtu {
                 delete del;
                 head = head->next;
             }
-            delete head->data;
+            if(head)
+                delete head->data;
         }
 
     };

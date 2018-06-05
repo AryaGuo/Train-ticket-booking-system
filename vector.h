@@ -13,6 +13,7 @@ namespace sjtu {
         ElemType vec[BlockSize * 2 / sizeof(ElemType)];
         int len;
     public:
+        vector() = default;
         explicit vector(const int &&size) {
             len = 0;
         }
