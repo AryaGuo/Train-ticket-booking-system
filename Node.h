@@ -29,7 +29,7 @@ namespace sjtu {
             return _cmp(x, y);
         }
         bool Equal(const Key_Type &x, const Key_Type &y) const{     /// ==
-            if ((Cmp(x, y) || Cmp(y, x))) return 0;
+            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
             else return 1;
         }
 
@@ -39,17 +39,14 @@ namespace sjtu {
             return _cmp(x, y);
         }
         bool Equal_child(const addType &x, const addType &y) const{     /// ==
-            if ((Cmp(x, y) || Cmp(y, x))) return 0;
+            if (!(Cmp(x, y) || Cmp(y, x))) return 0;
             else return 1;
         }
 
 
 
-
         explicit TreeNode(addType _address = -1, bool _isleaf = true):
-                childs(BlockSize / sizeof(addType)),
-                vals(BlockSize / sizeof(Value_Type)),
-                keys(BlockSize / sizeof(Key_Type))
+        childs(),vals(),keys()
         {
             address = _address;
             next = -1;
@@ -57,9 +54,9 @@ namespace sjtu {
         }
 
         TreeNode(const TreeNode &other) noexcept:
-                childs(BlockSize / sizeof(addType)),
-                vals(BlockSize / sizeof(Value_Type)),
-                keys(BlockSize / sizeof(Key_Type))
+                childs(),
+                vals(),
+                keys()
         {
             address = other.address;
             next = other.next;
@@ -122,12 +119,12 @@ namespace sjtu {
                     mid = (low + high) / 2;
                     if( Equal(K,keys[mid]) )
                         return mid;
-                    else if(keys[mid] < K)
+                    else if( Cmp(keys[mid] , K))
                         low = mid;
                     else
                         high = mid;
                 }
-                while (low < keys.size() && !Equal(K,keys[mid]) ) ++low;
+                while (low < keys.size() && !Equal(K,keys[low]) ) ++low;
 
                 if (low == keys.size()) return -1;
                 else return low;
@@ -165,9 +162,9 @@ namespace sjtu {
                 int mid;
                 while(high - low >= 10) {
                     mid = (low + high) / 2;
-                    if(Cmp_child(childs[mid],child))
+                    if(Equal_child(childs[mid],child))
                         return mid;
-                    else if(childs[mid] < child)
+                    else if(Cmp_child(childs[mid],child))
                         low = mid;
                     else
                         high = mid;
