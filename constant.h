@@ -23,6 +23,9 @@ namespace sjtu {
     const int TRAIN_CAPACITY = 2000;
 
     const int STRING_LEN = 50;
+
+    const int STATION_NUM = 70;
+    const int PRICE_NUM = 10;
 };
 
 #endif

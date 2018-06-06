@@ -33,32 +33,21 @@ namespace sjtu
         string id, name;
         char catalog;
         int stationNum, priceNum;
-        string* stationName; //[stationNum]
-        string* priceName;   //[priceNum]
-        time *arriveTime, *startTime, *stopover;    //[stationNum]
-        double **price; //[stationNum] * [priceNum]
+        string stationName[STATION_NUM]; //[stationNum]
+        string priceName[PRICE_NUM];   //[priceNum]
+        time arriveTime[STATION_NUM], startTime[STATION_NUM], stopover[STATION_NUM];    //[stationNum]
+        double price[STATION_NUM][PRICE_NUM]; //[stationNum] * [priceNum]
 
     public:
-        train():stationNum(0), priceNum(0) {
-            stationName = priceName = nullptr;
-            arriveTime = startTime = stopover = nullptr;
-            price = nullptr;
-        }
+        train():stationNum(0), priceNum(0) {}
 
         train(const train &other):
                 id(other.id),name(other.name), catalog(other.catalog), stationNum(other.stationNum), priceNum(other.priceNum)  {
-            stationName = new string[stationNum];
-            priceName = new string[priceNum];
-            arriveTime = new time[stationNum];
-            startTime = new time[stationNum];
-            stopover = new time[stationNum];
-            price = new double* [stationNum];
             for(int i = 0; i < stationNum; ++i) {
                 stationName[i] = other.stationName[i];
                 arriveTime[i] = other.arriveTime[i];
                 startTime[i] = other.startTime[i];
                 stopover[i] = other.stopover[i];
-                price[i] = new double[priceNum];
                 for(int j = 0; j < priceNum; ++j)
                     price[i][j] = other.price[i][j];
             }
@@ -70,31 +59,16 @@ namespace sjtu
         train& operator=(const train &other) {
             if(this == &other)
                 return *this;
-            delete [] stationName;
-            delete [] priceName;
-            delete [] arriveTime;
-            delete [] startTime;
-            delete [] stopover;
-            for(int i = 0; i < priceNum; i++)
-                delete [] price[i];
-            delete [] price;
             id = other.id;
             name = other.name;
             catalog = other.catalog;
             stationNum = other.stationNum;
             priceNum = other.priceNum;
-            stationName = new string[stationNum];
-            priceName = new string[priceNum];
-            arriveTime = new time[stationNum];
-            startTime = new time[stationNum];
-            stopover = new time[stationNum];
-            price = new double* [stationNum];
             for(int i = 0; i < stationNum; ++i) {
                 stationName[i] = other.stationName[i];
                 arriveTime[i] = other.arriveTime[i];
                 startTime[i] = other.startTime[i];
                 stopover[i] = other.stopover[i];
-                price[i] = new double[priceNum];
                 for(int j = 0; j < priceNum; ++j)
                     price[i][j] = other.price[i][j];
             }
@@ -110,17 +84,6 @@ namespace sjtu
 
         string getId() const{
             return id;
-        }
-
-        ~train() {
-            delete [] stationName;
-            delete [] priceName;
-            delete [] arriveTime;
-            delete [] startTime;
-            delete [] stopover;
-            for(int i = 0; i < priceNum; i++)
-                delete [] price[i];
-            delete [] price;
         }
     };
 
@@ -143,18 +106,11 @@ namespace sjtu
     std::istream &operator>>(std::istream &is, train &obj) {
         string tmp;
         is >> obj.id >> obj.name >> obj.catalog >> obj.stationNum >> obj.priceNum;
-        obj.stationName = new string[obj.stationNum];
-        obj.priceName = new string[obj.priceNum];
-        obj.arriveTime = new time[obj.stationNum];
-        obj.startTime = new time[obj.stationNum];
-        obj.stopover = new time[obj.stationNum];
-        obj.price = new double*[obj.stationNum];
         for(int i = 0; i < obj.priceNum; ++i) {
             is >> obj.priceName[i];
         }
         for(int i = 0; i < obj.stationNum; ++i) {
             is >> obj.stationName[i] >> obj.arriveTime[i] >> obj.startTime[i] >> obj.stopover[i];
-            obj.price[i] = new double[obj.priceNum];
             for(int j = 0; j < obj.priceNum; ++j) {
                 is >> tmp;
                 obj.price[i][j] = stringToDouble(tmp);

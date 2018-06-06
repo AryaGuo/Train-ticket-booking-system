@@ -103,7 +103,6 @@ void queryOrder()
     //query_order *id* *date* *catalog*
     int id;
     string date, catalog;
-    user u;
     std::cin >> id >> date >> catalog;
     if(!queryOrder(id, date, catalog))
         std::cout << "-1" << std::endl;
