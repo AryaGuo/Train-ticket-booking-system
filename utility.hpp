@@ -63,45 +63,42 @@ namespace sjtu {
         friend std::istream &operator>>(std::istream &is, string &obj);
 
     private:
-        char* data;
+        char data[STRING_LEN];
         int len;
-        static int const capacity = STRING_LEN;
 
     public:
 
         string(): len(0) {
-            data = new char[capacity];
-            memset(data, 0, sizeof(char) * capacity);
+            memset(data, 0, sizeof(data));
         }
 
         string(const char* ch){
             len = (int)strlen(ch);
-            if(len >= capacity)
+            if(len >= STRING_LEN)
                 throw overflow();
-            data = new char[capacity];
-            memcpy(data, ch, sizeof(char) * len);
+            memcpy(data, ch, STRING_LEN);
             data[len] = 0;
         }
 
+
         string(const string &other):len(other.len) {
-            data = new char[capacity];
-            memcpy(data, other.data, sizeof(char) * len);
+            memcpy(data, other.data, STRING_LEN);
             data[len] = 0;
         }
+
+        string(string &&other) = default;
 
         string& operator=(const string &other) {
             if(this == &other)
                 return *this;
-            //delete data;
-            //data = new char[capacity];
             len = other.len;
-            memcpy(data, other.data, sizeof(char) * len);
+            memcpy(data, other.data, STRING_LEN);
             data[len] = 0;
             return *this;
         }
 
         string& operator+=(const string &other) {
-            if(len + other.len >= capacity)
+            if(len + other.len >= STRING_LEN)
                 throw overflow();
             for(int i = 0, j = len; i < other.len; i++, j++)
                 data[j] = other[i];
@@ -111,7 +108,7 @@ namespace sjtu {
         }
 
         string& operator+= (const char &ch) {
-            if(len + 1 >= capacity)
+            if(len + 1 >= STRING_LEN)
                 throw overflow();
             data[len++] = ch;
             data[len] = 0;
@@ -149,10 +146,6 @@ namespace sjtu {
             if(i < 0 || i > len)
                 throw sjtu::index_out_of_bound();
             return data[i];
-        }
-
-        ~string() {
-            delete data;
         }
 
         int length() const {
