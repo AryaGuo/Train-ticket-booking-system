@@ -8,6 +8,8 @@
 #include "Node.h"
 
 
+#define start 4096
+
 /**
 
  *
@@ -25,8 +27,6 @@ template<class Key_Type,
          >
 class FileManager
 {
-    // friend class BPlusTree;
-    /**我觉得这个友元声明是必要的，但是写了会报错。。。*/
 private:
     typedef TreeNode<Key_Type, Value_Type> Node;
 
@@ -50,7 +50,7 @@ private:
         file = fopen(filename, "w");
 
         root_off = head_off = tail_off = -1;
-        append_off = 0;
+        append_off = 4096;
         fwrite(&root_off, sizeof(int), 1, file);
         fwrite(&head_off, sizeof(int), 1, file);
         fwrite(&tail_off, sizeof(int), 1, file);
@@ -84,7 +84,7 @@ public:
         filename[0] = '\0';
         isOpened = false;
         root_off = head_off = tail_off = -1;
-        append_off = -1;
+        append_off = start;
         file = nullptr;
     }
 
@@ -135,7 +135,7 @@ public:
             fclose(file);
 
             root_off = head_off = tail_off = -1;
-            append_off = -1;
+            append_off = start;
             file = nullptr;
             isOpened = false;
 
@@ -149,12 +149,11 @@ public:
 
         else
         {
-            fseek(file, 0, SEEK_SET);
             fclose(file);
-
             root_off = head_off = tail_off = -1;
-            append_off = 0;
+            append_off = start;
             file = fopen(filename,"w+");
+            fseek(file, 0, SEEK_SET);
             fwrite(&root_off, sizeof(int), 1, file);
             fwrite(&head_off, sizeof(int), 1, file);
             fwrite(&tail_off, sizeof(int), 1, file);
@@ -175,19 +174,17 @@ public:
     void get_block(addType offset, Node &ret)
     {
         ret.address = offset;
-
         fseek(file, offset, SEEK_SET);
 
         fread(&ret.isLeaf, sizeof(bool), 1, file);
+        short K_size, V_size, Ch_size;
+        fread(&K_size, sizeof(short), 1, file);
+        fread(&V_size, sizeof(short), 1, file);
+        fread(&Ch_size, sizeof(short), 1, file);
 
-        int K_size, V_size, Ch_size;
-        fread(&K_size, sizeof(int), 1, file);
-        fread(&V_size, sizeof(int), 1, file);
-        fread(&Ch_size, sizeof(int), 1, file);
-
-        ret.keys.file_read(file, K_size);
-        ret.vals.file_read(file, V_size);
-        ret.childs.file_read(file, Ch_size);
+        if( K_size != 0)ret.keys.file_read(file, K_size);       else ret.keys.shorten_len(0);
+        if( V_size != 0)ret.vals.file_read(file, V_size);       else ret.vals.shorten_len(0);
+        if( Ch_size != 0)ret.childs.file_read(file, Ch_size);   else ret.childs.shorten_len(0);
 
         fread(&ret.next, sizeof(addType), 1, file);
     }
@@ -207,12 +204,9 @@ public:
 
     bool get_root(Node &ret)
     {
-        if(root_off == -1) return false;
-
-        if(root_off == 0)
-            get_block(tree_utility_byte, ret);
+        if(root_off == -1) {   return false;}
         else
-            get_block(root_off, ret);
+            {  get_block(root_off, ret);}
         return true;
     }
     bool get_head(Node &ret)
@@ -240,7 +234,7 @@ public:
     void append_block(Node &ret, bool isLeaf)
     {
         ret.clear();
-        ret.address = (append_off == 0) ? tree_utility_byte : append_off;
+        ret.address = append_off;
         ret.isLeaf = isLeaf;
 
         append_off += BlockSize;
@@ -252,17 +246,13 @@ public:
 
         fwrite(&cur.isLeaf, sizeof(bool), 1, file);
 
-        int tmp = cur.keys.size();
-        fwrite(&tmp, sizeof(int), 1, file);
-        tmp = cur.vals.size();
-        fwrite(&tmp, sizeof(int), 1, file);
-        tmp = cur.childs.size();
-        fwrite(&tmp, sizeof(int), 1, file);
+        short   tmp = cur.keys.size();              fwrite(&tmp, sizeof(short), 1, file);
+                tmp = cur.vals.size();              fwrite(&tmp, sizeof(short), 1, file);
+                tmp = cur.childs.size();            fwrite(&tmp, sizeof(short), 1, file);
 
-        cur.keys.file_write(file);
-        cur.vals.file_write(file);
-        cur.childs.file_write(file);
-
+        if(cur.keys.size()!= 0)cur.keys.file_write(file);
+        if(cur.vals.size()!= 0)cur.vals.file_write(file);
+        if(cur.childs.size()!= 0)cur.childs.file_write(file);
         fwrite(&cur.next, sizeof(addType), 1, file);
     }
 
@@ -270,14 +260,11 @@ public:
     {
         fseek(file, cur.address, SEEK_SET);
 
-        fwrite(&cur.isLeaf, sizeof(bool), 1, file);
+        fwrite(&cur.isLeaf,sizeof(bool), 1, file);
 
-        int tmp = cur.keys.size();
-        fwrite(&tmp, sizeof(int), 1, file);
-        tmp = cur.vals.size();
-        fwrite(&tmp, sizeof(int), 1, file);
-        tmp = cur.childs.size();
-        fwrite(&tmp, sizeof(int), 1, file);
+        short   tmp = cur.keys.size();          fwrite(&tmp, sizeof(short), 1, file);
+                tmp = cur.vals.size();          fwrite(&tmp, sizeof(short), 1, file);
+                tmp = cur.childs.size();        fwrite(&tmp, sizeof(short), 1, file);
 
         cur.keys.file_write(file);
         cur.vals.file_write(file);
@@ -304,7 +291,7 @@ public:
             printf("traverse empty tree\n");
             return;
         }
-
+        std::cout<<root_off<<"root_off\n";
         Node cur;
         get_block(head_off, cur);
 
