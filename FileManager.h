@@ -50,7 +50,7 @@ private:
         file = fopen(filename, "w");
 
         root_off = head_off = tail_off = -1;
-        append_off = 4096;
+        append_off = start;
         fwrite(&root_off, sizeof(int), 1, file);
         fwrite(&head_off, sizeof(int), 1, file);
         fwrite(&tail_off, sizeof(int), 1, file);
