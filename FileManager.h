@@ -325,15 +325,36 @@ public:
             if( Cmp( now.keys[now.keys.size()-1] ,K) )get_block(now.next, now);
             else {
                 int i;
-                for( i = 0; i < now.keys.size(); ++i)
+
+                if(now.keys.size() < 10)
                 {
-                    if(now.keys[i] == K) break;
+                    for( i = 0; i < now.keys.size(); ++i)
+                    {
+                    if(Equal(now.keys[i],K)) break;
+                    }
+
+                }
+                else
+                {
+                    int low = 0, high = now.keys.size() - 1;
+                    int mid;
+                    while(high - low >= 10) {
+                        mid = (low + high) / 2;
+                        if( Equal(K,now.keys[mid]) )
+                            high = mid;
+                        else if( Cmp(now.keys[mid] , K))
+                            low = mid;
+                        else
+                            high = mid;
+                    }
+                    while (low < now.keys.size() && !Equal(K,now.keys[low]) ) ++low;
+                    i = low;
                 }
                 --i;
                     while(1)
                     {
                         i++;
-                        if(now.keys[i] != K) break;
+                        if(!Equal(now.keys[i] , K) ) break;
                         ans.push_back(now.vals[i]);
                         if(i == now.keys.size() - 1) {
                                 if(now.next == -1)
