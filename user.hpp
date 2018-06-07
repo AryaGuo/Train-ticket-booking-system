@@ -13,37 +13,37 @@ namespace sjtu
 
     class user {
 
-public:
-    string name, pwd, email, phone;
-    bool loginSta;
+    public:
+        string name, pwd, email, phone;
+        bool loginSta;
 
-public:
+    public:
 
-    int id, priv;
-    static int idCnt;
+        int id, priv;
 
-    user(): name(), pwd(), email(), phone() {
-        id = -1;
-        priv = 0;
-        loginSta = false;
-    }
+        user(): name(), pwd(), email(), phone() {
+            id = -1;
+            priv = 0;
+            loginSta = false;
+        }
 
-    user(const user &other):
-            id(other.id), priv(other.priv), name(other.name), pwd(other.pwd), email(other.email), phone(other.phone),
-            loginSta(other.loginSta) {}
+        user(const user &other):
+                id(other.id), priv(other.priv), name(other.name), pwd(other.pwd), email(other.email), phone(other.phone),
+                loginSta(other.loginSta) {}
 
-    user(string const &name, string const &pwd, string const &email, string const &phone):
-            name(name), pwd(pwd), email(email), phone(phone), id(-1), priv(0), loginSta(false) {}
+        user(string const &name, string const &pwd, string const &email, string const &phone):
+                name(name), pwd(pwd), email(email), phone(phone), id(-1), priv(0), loginSta(false) {}
 
-    int getPri() {
-        return priv;
-    }
+        int getPri() {
+            return priv;
+        }
 
-    bool operator< (const user &other) const{
-        return id < other.id;
-    }
+        bool operator< (const user &other) const{
+            return id < other.id;
+        }
 
-};
+    };
+
     std::ostream& operator<< (std::ostream &os, const user &obj) {
         os << obj.name << ' ' << obj.email << ' ' << obj.phone << ' ' << obj.priv;
         return os;
@@ -52,8 +52,6 @@ public:
         is >> obj.name >> obj.pwd >> obj.email >> obj.phone;
         return is;
     }
-
-    int user::idCnt = 2017;
 }
 
 

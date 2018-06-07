@@ -29,6 +29,46 @@ namespace sjtu {
         a = b;
         b = tmp;
     }
+
+    template <class T, class Comp = std::less<T> >
+    void sort(T _begin, T _end, Comp cmp)
+    {
+        if (_end - _begin <= 1)
+            return;
+        T _temp = _begin;
+        T _front = _begin;
+        T _back = _end - 1;
+        while (true)
+        {
+            while (_back - _front >= 0)
+            {
+                if (cmp(*_back, *_temp))
+                {
+                    swap(*_back, *_temp);
+                    _temp = _back;
+                    _back--;
+                    break;
+                }
+                _back--;
+            }
+            while (_back - _front >= 0)
+            {
+                if (cmp(*_temp, *_front))
+                {
+                    swap(*_temp, *_front);
+                    _temp = _front;
+                    _front++;
+                    break;
+                }
+                _front++;
+            }
+            if (_back - _front < 0)
+                break;
+        }
+        sort(_begin, _temp, cmp);
+        sort(_temp + 1, _end, cmp);
+    }
+
     double stringToDouble(string);
 
     bool isDigit(char);

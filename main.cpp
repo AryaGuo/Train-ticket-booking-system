@@ -12,19 +12,10 @@
 #include "ticket.hpp"
 #include "BPlusTree.h"
 #include "tuple.hpp"
-#include "map.hpp"
 #include "queue.hpp"
 #include "constant.h"
 #include "implement.hpp"
 using namespace arya;
-
-typedef sjtu::string string;
-typedef sjtu::train train;
-typedef sjtu::ticket ticket;
-typedef sjtu::map <string, train> trainSet;
-typedef sjtu::map <int, ticket> ticketSet; //TODO: ticketSet: orderId or ticket ??
-typedef sjtu::user user;
-typedef sjtu::time Time;
 
 void Register()
 {
@@ -118,15 +109,14 @@ void refundTicket()
 
 void addTrain()
 {
-    train tr;
-    std::cin >> tr;
-    std::cout << addTrain(tr) << std::endl;
+    string id;
+    std::cin >> id;
+    std::cout << addTrain(id) << std::endl;
 }
 
 void saleTrain()
 {
     string id;
-    train T;
     std::cin >> id;
     std::cout << saleTrain(id) << std::endl;
 }
@@ -141,22 +131,26 @@ void queryTrain()
         std::cout << "0" << std::endl;
         return;
     }
-    std::cout << T;
+    printTrain(T);
 }
 
 void deleteTrain()
 {
     string id;
-    train T;
     std::cin >> id;
     std::cout << deleteTrain(id) << std::endl;
 }
 
 void modifyTrain()
 {
-    train T;
-    std::cin >> T;
-    std::cout << modifyTrain(T) << std::endl;
+    string id;
+    std::cin >> id;
+    std::cout << modifyTrain(id) << std::endl;
+}
+
+void modifyValue(int &val, const string &key, const int &st) {
+    val = st;
+    lastId.modify(key, val);
 }
 
 void clean()
@@ -171,7 +165,24 @@ void clean()
     idTicket.clean();
     infoOrderId.clean();
     orderIdTicket.clean();
+    station.clean();
+    priceName.clean();
+
+    modifyValue(idCnt, "id", 2017);
+    modifyValue(orderCnt, "order", 0);
+    modifyValue(stationCnt, "station", 0);
+
     std::cout << 1 << std::endl;
+}
+
+void setValue(int &val, const string &key, const int &st) {
+    auto id = lastId.find(key);
+    if(id.first)
+        val = id.second;
+    else {
+        val = st;
+        lastId.insert(key, val);
+    }
 }
 
 void init()
@@ -186,6 +197,13 @@ void init()
     idTicket.open_file();
     infoOrderId.open_file();
     orderIdTicket.open_file();
+    lastId.open_file();
+    station.open_file();
+    priceName.open_file();
+
+    setValue(idCnt, "id", 2017);
+    setValue(orderCnt, "order", 0);
+    setValue(stationCnt, "station", 0);
 }
 
 void close()
@@ -200,13 +218,17 @@ void close()
     idTicket.close_file();
     infoOrderId.close_file();
     orderIdTicket.close_file();
+    lastId.close_file();
+    station.close_file();
+    priceName.close_file();
 }
 
 int main()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(0);
-    freopen("test.in", "r", stdin);
+//    freopen("test.in", "r", stdin);
+//    freopen("test.out", "w", stdout);
 
     const int funcNum = 17;
     string comm;
@@ -231,7 +253,9 @@ int main()
     void (*func[funcNum])() = {Register, queryProfile, modifyProfile, modifyPrivilege, queryTicket, queryTransfer, buyTicket,
                           queryOrder, refundTicket, addTrain, saleTrain, queryTrain, deleteTrain, modifyTrain, clean, login};
     init();
+//    clean();    //TODO
     int tot = 0;
+//    while(true)
     while(tot <= 100000)    //TODO
     {
         tot++;
@@ -251,7 +275,7 @@ int main()
             std::cout << "WRONG COMMAND" << std::endl;
         }
     }
-    //clean();//TODO
+//    clean(); //TODO
     close();
     return 0;
 }

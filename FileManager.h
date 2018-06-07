@@ -146,14 +146,14 @@ public:
             fclose(file);
 
             root_off = head_off = tail_off = -1;
-            std::cout<<1<<'\n';
+            /*std::cout<<1<<'\n';
             system("pause");
             append_off = start;
             std::cout<<1<<'\n';
             system("pause");
             file = nullptr;
             std::cout<<1<<'\n';
-            system("pause");
+            system("pause");*/
             isOpened = false;
 
             return true;
@@ -322,7 +322,11 @@ public:
         get_block(head_off, now);
         while(true)
         {
-            if( Cmp( now.keys[now.keys.size()-1] ,K) )get_block(now.next, now);
+            if( Cmp( now.keys[now.keys.size()-1] ,K) ) {
+                if(now.next != -1)
+                    get_block(now.next, now);
+                else    return ans;
+            }
             else {
                 int i;
 

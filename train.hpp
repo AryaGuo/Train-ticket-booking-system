@@ -6,7 +6,6 @@
 #define TRAIN_TICKET_BOOKING_SYSTEM_TRAIN_H
 
 #include "utility.hpp"
-#include "map.hpp"
 #include <iostream>
 
 /*
@@ -24,142 +23,141 @@
     ->; 1
      */
 
-namespace sjtu
-{
+namespace sjtu {
+    class Station {
+        friend std::ostream &operator<<(std::ostream &os, const Station &obj);
+        friend std::istream &operator>>(std::istream &is, Station &obj);
+
+    public:
+        int len;
+        string name;
+        time arrive, Start, stopover;
+        double price[PRICE_NUM];
+
+    public:
+        Station() = default;
+        Station(const int &len): len(len) {}
+
+        string getName() {
+            return name;
+        }
+        time getArrive() {
+            return arrive;
+        }
+        time getStart() {
+            return Start;
+        }
+        time getStopover() {
+            return stopover;
+        }
+        double getPrice(const int &x) {
+            return price[x];
+        }
+    };
+
+    //TODO: check
+    std::ostream &operator<<(std::ostream &os, const Station &obj)
+    {
+        os << obj.name << ' ' << obj.arrive << ' ' << obj.Start << ' ' << obj.stopover;
+        for(int i = 0; i < obj.len; ++i) {
+            os << " ¥" << obj.price[i];
+        }
+        return os;
+    }
+
+    std::istream &operator>>(std::istream &is, Station &obj) {
+        is >> obj.name >> obj.arrive >> obj.Start >> obj.stopover;
+        for(int i = 0; i < obj.len; ++i) {
+            string tmp;
+            is >> tmp;
+            obj.price[i] = stringToDouble(tmp);
+        }
+        return is;
+    }
+
+    class PriceName {
+        friend std::ostream &operator<<(std::ostream &os, const PriceName &obj);
+        friend std::istream &operator>>(std::istream &is, PriceName &obj);
+
+    private:
+        int len;
+        string data[PRICE_NUM];
+
+    public:
+        PriceName() = default;
+
+        PriceName(const int &len) : len(len) {}
+
+        int length() const {
+            return len;
+        }
+
+        string &operator[](const int &i) {
+            if (i < 0 || i > len)
+                throw sjtu::index_out_of_bound();
+            return data[i];
+        };
+
+        string operator[](const int &i) const {
+            if (i < 0 || i > len)
+                throw sjtu::index_out_of_bound();
+            return data[i];
+        }
+    };
+
+    std::ostream &operator<<(std::ostream &os, const PriceName &obj) {
+        for(int i = 0; i < obj.length(); ++i) {
+            if(i)   os << ' ';
+            os << obj[i];
+        }
+        return os;
+    }
+
+    std::istream &operator>>(std::istream &is, PriceName &obj) {
+        for(int i = 0; i < obj.length(); ++i)
+            is >> obj[i];
+        return is;
+    }
 
     class train {
+        friend std::ostream &operator<<(std::ostream &os, const train &obj);
+
+        friend std::istream &operator>>(std::istream &is, train &obj);
 
     public:
-        string id, name;
-        char catalog;
         int stationNum, priceNum;
-        string stationName[STATION_NUM]; //[stationNum]
-        string priceName[PRICE_NUM];   //[priceNum]
-        time arriveTime[STATION_NUM], startTime[STATION_NUM], stopover[STATION_NUM];    //[stationNum]
-        double price[STATION_NUM][PRICE_NUM]; //[stationNum] * [priceNum]
+        int stationId[STATION_NUM];
+        char catalog;
+        string id, name;
 
     public:
-        train():stationNum(0), priceNum(0) {}
+        train() = default;
 
-        train(const train &other):
-                id(other.id),name(other.name), catalog(other.catalog), stationNum(other.stationNum), priceNum(other.priceNum)  {
-            for(int i = 0; i < stationNum; ++i) {
-                stationName[i] = other.stationName[i];
-                arriveTime[i] = other.arriveTime[i];
-                startTime[i] = other.startTime[i];
-                stopover[i] = other.stopover[i];
-                for(int j = 0; j < priceNum; ++j)
-                    price[i][j] = other.price[i][j];
-            }
-            for(int i = 0; i < priceNum; ++i) {
-                priceName[i] = other.priceName[i];
-            }
-        }
+        train(const string &id) : id(id) {}
 
-        train& operator=(const train &other) {
-            if(this == &other)
-                return *this;
-            id = other.id;
-            name = other.name;
-            catalog = other.catalog;
-            stationNum = other.stationNum;
-            priceNum = other.priceNum;
-            for(int i = 0; i < stationNum; ++i) {
-                stationName[i] = other.stationName[i];
-                arriveTime[i] = other.arriveTime[i];
-                startTime[i] = other.startTime[i];
-                stopover[i] = other.stopover[i];
-                for(int j = 0; j < priceNum; ++j)
-                    price[i][j] = other.price[i][j];
-            }
-            for(int i = 0; i < priceNum; ++i) {
-                priceName[i] = other.priceName[i];
-            }
-            return *this;
-        }
-
-        bool operator < (const train &other) {
+        bool operator<(const train &other) const{
             return id < other.id;
         }
 
-        string getId() const{
+        string getId() const {
             return id;
         }
     };
 
     std::ostream &operator<<(std::ostream &os, const train &obj) {
         os << obj.id << ' ' << obj.name << ' ' << obj.catalog << ' ' << obj.stationNum << ' ' << obj.priceNum;
-        for(int i = 0; i < obj.priceNum; ++i) {
-            os << ' ' << obj.priceName[i];
-        }
-        os << std::endl;
-        for(int i = 0; i < obj.stationNum; ++i) {
-            os << obj.stationName[i] << ' ' << obj.arriveTime[i] << ' ' << obj.startTime[i] << ' ' << obj.stopover[i];
-            for(int j = 0; j < obj.priceNum; ++j) {
-                os << " ¥" << obj.price[i][j];
-            }
-            os << std::endl;
-        }
+        for (int i = 0; i < obj.priceNum; ++i);// os << ' ' << obj.priceName[i];
         return os;
     }
 
     std::istream &operator>>(std::istream &is, train &obj) {
-        string tmp;
-        is >> obj.id >> obj.name >> obj.catalog >> obj.stationNum >> obj.priceNum;
-        for(int i = 0; i < obj.priceNum; ++i) {
-            is >> obj.priceName[i];
-        }
-        for(int i = 0; i < obj.stationNum; ++i) {
-            is >> obj.stationName[i] >> obj.arriveTime[i] >> obj.startTime[i] >> obj.stopover[i];
-            for(int j = 0; j < obj.priceNum; ++j) {
-                is >> tmp;
-                obj.price[i][j] = stringToDouble(tmp);
-            }
-        }
+        is >> obj.name >> obj.catalog >> obj.stationNum >> obj.priceNum;
+        for (int i = 0; i < obj.priceNum; ++i);//is >> obj.priceName[i];
         return is;
     }
 
-    /*
-     * date + time
-     * len = 16
-     * 2018-03-28 08:00
-     */
-    string getStartTime(train const &tr, string date, string const &loc) {
-        string res(date);
-        res += ' ';
-        for(int i = 0; i < tr.stationNum; ++i)
-            if(tr.stationName[i] == loc) {
-                return res += tr.startTime[i].out();
-            }
-            //TODO
-    }
 
-    string getArriveTime(train const &tr, string date, string const &loc) {
-        string res(date);
-        res += ' ';
-        for(int i = 0; i < tr.stationNum; ++i)
-            if(tr.stationName[i] == loc) {
-                return res += tr.arriveTime[i].out();
-            }
-            //TODO
-    }
-
-    double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
-        int pos1 = 0, pos2 = 0;
-        double sum = 0;
-        for(int i = 0; i < tr.stationNum; ++i) {
-            if(tr.stationName[i] == loc1)
-                pos1 = i;
-            if(tr.stationName[i] == loc2)
-                pos2 = i;
-        }
-        for(int i = pos1 + 1; i <= pos2; i++) {
-            sum += tr.price[i][priceId];
-        }
-        return sum;
-    }
 
 }
-
 
 #endif //TRAIN_TICKET_BOOKING_SYSTEM_TRAIN_H

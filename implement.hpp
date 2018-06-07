@@ -15,17 +15,20 @@
 #include "ticket.hpp"
 #include "BPlusTree.h"
 #include "tuple.hpp"
-#include "map.hpp"
 #include "queue.hpp"
 #include "constant.h"
+#include "vector.h"
 
 typedef sjtu::string string;
 typedef sjtu::train train;
 typedef sjtu::ticket ticket;
-typedef sjtu::map <string, train> trainSet;
-typedef sjtu::map <int, ticket> ticketSet; //TODO: ticketSet: orderId or ticket ??
+//typedef sjtu::vector <train> trainSet;
+//typedef sjtu::vector <ticket> ticketSet; //TODO: ticketSet: orderId or ticket ??
 typedef sjtu::user user;
 typedef sjtu::time Time;
+typedef sjtu::Station Station;
+typedef sjtu::PriceName PriceName;
+typedef sjtu::pair<train, sjtu::vector<int>> trainInfo;
 
 const int CAPACITY = sjtu::TRAIN_CAPACITY;
 
@@ -37,32 +40,55 @@ const int CAPACITY = sjtu::TRAIN_CAPACITY;
 
     locTrain    < loc, trainSet >
     direct      < {loc1, loc2, catalog}, trainSet >
-    transfer    < {loc1, loc2, catalog}, {time, train1, train2, loc0, loc1, loc2} >
 
     trKindTicket    < {trainId, date, kind}, ticketSet >
     trDate          < {trainId, date}, ticketSet >
     idTicket        < {id, date, catalog}, ticketSet >
     infoOrderId     < {id, trainId, loc1, loc2, date, kind}, OrderId >
+
     orderIdTicket   < OrderId, ticket >
+    station         <stationId, Station>
+    priceName       <trainId, priceName>
+
  */
 
 sjtu::BPlusTree <int, user> idUser("user");
 sjtu::BPlusTree <string, train> sale("sale");
-sjtu::BPlusTree <string, train> nSale("nsale");
-sjtu::BPlusTree <string, trainSet> locTrain("locTrain");
-sjtu::BPlusTree <sjtu::tuple3<string, string, char>, trainSet> direct("direct");
-sjtu::BPlusTree <sjtu::tuple3<string, string, string>, ticketSet> trKindTicket("trKindTicket");
-sjtu::BPlusTree <sjtu::pair<string, string>, ticketSet> trDate("trDate");
-sjtu::BPlusTree <sjtu::tuple3<int, string, char>, ticketSet> idTicket("idTicket");
+sjtu::BPlusTree <string, train> nSale("nSale");
+sjtu::BPlusTree <string, train> locTrain("locTrain");
+sjtu::BPlusTree <sjtu::tuple3<string, string, char>, train> direct("direct");
+sjtu::BPlusTree <sjtu::tuple3<string, string, string>, int> trKindTicket("trKindTicket");
+sjtu::BPlusTree <sjtu::pair<string, string>, int> trDate("trDate");
+sjtu::BPlusTree <sjtu::tuple3<int, string, char>, int> idTicket("idTicket");
 sjtu::BPlusTree <sjtu::tuple6<int, string, string, string, string, string>, int> infoOrderId("infoOrderId");
 sjtu::BPlusTree <int, ticket> orderIdTicket("orderIdTicket");
+sjtu::BPlusTree <string, int> lastId("lastId");
+sjtu::BPlusTree <int, Station> station("station");
+sjtu::BPlusTree <string, PriceName> priceName("priceName");
+
+int idCnt, orderCnt, stationCnt;
 
 namespace arya {
+
+    //TODO
+
+    Station getStation(train const &tr, int const &i) {
+        return station.find(tr.stationId[i]).second;
+    }
+
+    string stationName(train const &tr, int const &i) {
+        return getStation(tr, i).getName();
+    }
+
+    //TODO
+    ticket getTicket(int const &i) {
+        return orderIdTicket.find(i).second;
+    }
 
     bool intersect(train const &tr, ticket const &tic, string const &loc1, string const &loc2) {
         int l, r, s, t;
         for (int i = 0; i < tr.stationNum; ++i) {
-            auto now = tr.stationName[i];
+            auto now = stationName(tr, i);
             if (now == loc1)
                 l = i;
             if (now == loc2)
@@ -75,11 +101,55 @@ namespace arya {
         return !(r < s || l > t);
     }
 
+    /*
+     * 2018-03-28 08:00
+     */
+    string getStartTime(train const &tr, string date, string const &loc) {
+        string res(date);
+        res += ' ';
+        for(int i = 0; i < tr.stationNum; ++i) {
+            Station st = getStation(tr, i);
+            if(st.getName() == loc)
+                return res += st.getStart().out();
+        }
+        throw sjtu::invalid_operation();
+    }
+
+    string getArriveTime(train const &tr, string date, string const &loc) {
+        string res(date);
+        res += ' ';
+        for(int i = 0; i < tr.stationNum; ++i) {
+            Station st = getStation(tr, i);
+            if(st.getName() == loc)
+                return res += st.getArrive().out();
+        }
+    }
+
+    double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
+        int pos1 = 0, pos2 = 0;
+        double sum = 0;
+        for(int i = 0; i < tr.stationNum; ++i) {
+            Station st = getStation(tr,  i);
+            if(st.getName() == loc1)
+                pos1 = i;
+            if(st.getName() == loc2)
+                pos2 = i;
+        }
+        for(int i = pos1 + 1; i <= pos2; i++) {
+            Station st = getStation(tr,  i);
+            sum += st.getPrice(priceId);
+        }
+        return sum;
+    }
+
     int Register(user &u) {
-        int id = ++user::idCnt;
+        int id = ++idCnt;
+        lastId.modify("id", idCnt);
         u.id = id;
         if (id == 2018)
             u.priv = 2;
+        else
+            u.priv = 1;
         if (idUser.insert(id, u))
             return id;
         return -1;
@@ -122,50 +192,54 @@ namespace arya {
     }
 
     bool excludeTicket(train const &tr, string const &loc1, string const &loc2, string const &date,
-                       sjtu::pair<train, sjtu::map<string, int>> &ret) {
-        typedef sjtu::map<string, int> map;
+                       sjtu::vector<int> &ret) {
         int sold = 0;
-        map used;
-        auto allTicket = trDate.find(sjtu::pair<string, string>(tr.getId(), date)).second;
-        for (auto &j: allTicket) {
-            ticket tic = j.second;
-            if (intersect(tr, tic, loc1, loc2)) {
-                if (used[tic.getKind()] += tic.getNum() == CAPACITY)
-                    sold++;
+        ret.clear();
+        PriceName pn = priceName.find(tr.id).second;
+        auto allTicket = trDate.find_muti(sjtu::pair<string, string>(tr.getId(), date));
+        for (int i = 0; i < allTicket.size(); ++i) {
+            ticket tic = getTicket(allTicket[i]);
+            if (tic.getNum() && intersect(tr, tic, loc1, loc2)) {
+                for(int j = 0; j < tr.priceNum; ++j)
+                    if(tic.getKind() == pn[j]) {
+                        ret[j] += tic.getNum();
+                        if(ret[j] == CAPACITY)
+                            sold++;
+                    }
+                }
             }
-        }
-        if (sold < tr.priceNum) {
-            ret = sjtu::pair<train, map>(tr, used);
-            return true;
-        }
-        return false;
+        return sold < tr.priceNum;
     }
 
     void printQueryTicket(train const &tr, string const &loc1, string const &loc2, string const &date,
-                          const sjtu::map<string, int> &used) {
-        std::cout << tr.id << ' ' << loc1 << ' ' << sjtu::getStartTime(tr, date, loc1) << ' ' << loc2 << ' '
-                  << sjtu::getArriveTime(tr, date, loc2);
+                          const sjtu::vector<int> &used) {
+        std::cout << tr.id << ' ' << loc1 << ' ' << getStartTime(tr, date, loc1) << ' ' << loc2 << ' '
+                  << getArriveTime(tr, date, loc2);
+        PriceName pn = priceName.find(tr.id).second;
         for (int i = 0; i < tr.priceNum; ++i) {
             int rem = CAPACITY;
-            if (used.count(tr.priceName[i]))
-                rem -= used[tr.priceName[i]];
+            rem -= used[i];
             //TODO: rem == 0?
             if (rem > 0) {
-                std::cout << ' ' << tr.priceName[i] << ' ' << rem << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
+                std::cout << ' ' << pn[i] << ' ' << rem << ' ' << getPrice(tr, loc1, loc2, i);
             }
         }
         std::cout << std::endl;
     }
 
+    bool cmp(trainInfo const &a, trainInfo const &b) {
+        return a.first < b.first;
+    }
+
+//    bool queryTicket(string &loc1, string &loc2, string &date, string &catalog) {
     bool queryTicket(string const &loc1, string const &loc2, string const &date, string const &catalog) {
-        typedef sjtu::map<string, int> map;
-        int len = catalog.length(), sum = 0;
-        auto que = new sjtu::queue<sjtu::pair<train, map> >[len];
+        int len = catalog.length(), tot = 0;
+        trainInfo q[sjtu::MAX_DIRECT];
         for (int i = 0; i < len; ++i) {
             char cat = catalog[i];
-            auto allTrain = direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).second;
-            for (auto &it: allTrain) {   //guarantees the order of trains
-                train tr = it.second;
+            auto allTrain = direct.find_muti(sjtu::tuple3<string, string, char>(loc1, loc2, cat));
+            for (int j = 0; j < allTrain.size(); ++j) {
+                train tr = allTrain[j];
                 /*int sold = 0;
                 map used;
                 auto allTicket = trDate.find(sjtu::pair<string, string>(tr.getId(), date)).second;
@@ -180,30 +254,17 @@ namespace arya {
                     que[i].push(sjtu::pair<train, map>(tr, used));
                     sum++;
                 }*/
-                sjtu::pair<train, map> ret;
+                sjtu::vector<int> ret;
                 if (excludeTicket(tr, loc1, loc2, date, ret)) {
-                    que[i].push(ret);
-                    sum++;
+                    q[++tot] = trainInfo(tr, ret);
                 }
             }
         }
-        std::cout << sum << std::endl;
-        while (sum--) {
-            int pos = -1;
-            for (int i = 0; i < len; ++i)
-                if (!que[i].empty() && (pos == -1 || que[i].front().first.id < que[pos].front().first.id))
-                    pos = i;
-            auto tr = que[pos].front().first;
-            auto used = que[pos].front().second;
-            que[pos].pop();
-            /*std::cout << tr.id << ' ' << loc1 << ' ' << sjtu::getStartTime(tr, date, loc1) << ' ' << loc2 << ' ' << sjtu::getArriveTime(tr, date, loc2);
-            for(int i = 0; i < tr.priceNum; ++i) {
-                int rem = CAPACITY - used[tr.priceName[i]];
-                //TODO: rem == 0?
-                if(rem > 0) {
-                    std::cout << ' ' << tr.priceName[i] << ' ' << rem << ' ' << sjtu::getPrice(tr, loc1, loc2, i);
-                }
-            }*/
+        sort(q + 1, q + 1 + tot, cmp);
+        std::cout << tot << std::endl;
+        for(int i = 1; i <= tot; ++i) {
+            auto tr = q[i].first;
+            auto used = q[i].second;
             printQueryTicket(tr, loc1, loc2, date, used);
         }
         return true;//TODO: -1?
@@ -212,17 +273,19 @@ namespace arya {
     Time calTime(train const &tr1, train const &tr2, string const &loc0, string const &loc1, string const &loc2) {
         Time t[4];
         for (int i = 0; i < tr1.stationNum; ++i) {
-            if (tr1.stationName[i] == loc0) {
-                t[0] = tr1.startTime[i];
-            } else if (tr1.stationName[i] == loc1) {
-                t[1] = tr1.arriveTime[i];
+            auto st = getStation(tr1, i);
+            if (st.getName() == loc0) {
+                t[0] = st.getStart();
+            } else if (st.getName() == loc1) {
+                t[1] = st.getArrive();
             }
         }
         for (int i = 0; i < tr2.stationNum; ++i) {
-            if (tr2.stationName[i] == loc1) {
-                t[2] = tr2.startTime[i];
-            } else if (tr2.stationName[i] == loc2) {
-                t[3] = tr2.arriveTime[i];
+            auto st = getStation(tr2, i);
+            if (st.getName() == loc1) {
+                t[2] = st.getStart();
+            } else if (st.getName() == loc2) {
+                t[3] = st.getArrive();
             }
         }
         Time res(0, 0), day(24, 0);
@@ -231,42 +294,37 @@ namespace arya {
         return res;
     }
 
+    bool Test();
+
     bool queryTransfer(string const &loc1, string const &loc2, string const &date, string const &catalog) {
         //loc1->loc0->loc2
         //time, loc1, loc0, loc2, tr1, tr2
-        typedef sjtu::map<string, int> map;
-        typedef sjtu::pair<train, map> trainInfo;
         typedef sjtu::tuple6<Time, string, string, string, trainInfo, trainInfo> Result;
         Result ans;
         bool flag = false;
-        auto tmp = locTrain.find(loc1);
-        if (!tmp.first)
+        auto trainS = locTrain.find_muti(loc1);
+        if (!trainS.size())
             return false;
-        auto trainS = tmp.second;
-        for (auto &it: trainS) {
-            auto tr1 = it.second;
-            for (int i = tr1.stationNum - 1; i >= 0; --i) {
-                auto loc0 = tr1.stationName[i];
+        for(int it = 0; it < trainS.size(); ++it) {
+            auto tr1 = trainS[it];
+            for(int i = tr1.stationNum - 1; i >= 0; --i) {
+                auto loc0 = stationName(tr1, i);
                 if (loc0 == loc1)
                     break;
-                sjtu::pair<train, sjtu::map<string, int>> ret1, ret2;
-                if (excludeTicket(tr1, loc1, loc0, date, ret1)) {
+                sjtu::vector<int> ret1, ret2;
+                if(excludeTicket(tr1, loc1, loc0, date, ret1)) {
                     for (int pos = catalog.length() - 1; pos >= 0; pos--) {
                         char cat = catalog[pos];
-                        auto tmp2 = direct.find(sjtu::tuple3<string, string, char>(loc0, loc1, cat));
-                        if (tmp2.first) {
-                            auto trainS2 = tmp2.second;
-                            for (auto &it2: trainS2) {
-                                auto tr2 = it2.second;
+                        auto trainS2 = direct.find_muti(sjtu::tuple3<string, string, char>(loc0, loc1, cat));
+                        {
+                            for (int j = 0; j < trainS2.size(); ++j) {
+                                auto tr2 = trainS2[j];
                                 if (excludeTicket(tr2, loc0, loc2, date, ret2)) {
-                                    if (!flag) {
+                                    auto now = Result(calTime(tr1, tr2, loc1, loc0, loc2), loc1, loc0, loc2,
+                                                      trainInfo(tr1, ret1), trainInfo(tr2, ret2));
+                                    if (!flag || now.head() < ans.head()) {
                                         flag = true;
-                                        ans = Result(calTime(tr1, tr2, loc1, loc0, loc2), loc1, loc0, loc2, ret1, ret2);
-                                    } else {
-                                        auto now = Result(calTime(tr1, tr2, loc1, loc0, loc2), loc1, loc0, loc2, ret1,
-                                                          ret2);
-                                        if (now.head() < ans.head())
-                                            ans = now;
+                                        ans = now;
                                     }
                                 }
                             }
@@ -284,41 +342,9 @@ namespace arya {
 
     void modifyTicketSet(int const &orderId, train const &tr, int const &id, int const &num, string const &trainId,
                          string const &date, string const &kind) {
-        auto tic = orderIdTicket.find(orderId).second;
+        auto tic = getTicket(orderId);
         tic.modifyNum(num);
         orderIdTicket.modify(orderId, tic);
-
-        if (tic.num > 0) {
-            auto t1 = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind));
-            auto ticSet1 = t1.second;
-            ticSet1[orderId] = tic;
-            trKindTicket.modify(sjtu::tuple3<string, string, string>(trainId, date, kind), ticSet1);
-
-            auto t2 = trDate.find(sjtu::pair<string, string>(trainId, date));
-            auto ticSet2 = t2.second;
-            ticSet2[orderId] = tic;
-            trDate.modify(sjtu::pair<string, string>(trainId, date), ticSet2);
-
-            auto t3 = idTicket.find(sjtu::tuple3<int, string, char>(id, date, tr.catalog));
-            auto ticSet3 = t3.second;
-            ticSet3[orderId] = tic;
-            idTicket.modify(sjtu::tuple3<int, string, char>(id, date, tr.catalog), ticSet3);
-        } else {
-            auto t1 = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind));
-            auto ticSet1 = t1.second;
-            ticSet1.erase(ticSet1.find(orderId));
-            trKindTicket.modify(sjtu::tuple3<string, string, string>(trainId, date, kind), ticSet1);
-
-            auto t2 = trDate.find(sjtu::pair<string, string>(trainId, date));
-            auto ticSet2 = t2.second;
-            ticSet2.erase(ticSet1.find(orderId));
-            trDate.modify(sjtu::pair<string, string>(trainId, date), ticSet2);
-
-            auto t3 = idTicket.find(sjtu::tuple3<int, string, char>(id, date, tr.catalog));
-            auto ticSet3 = t3.second;
-            ticSet3.erase(ticSet1.find(orderId));
-            idTicket.modify(sjtu::tuple3<int, string, char>(id, date, tr.catalog), ticSet3);
-        }//TODO
     }
 
     void insertOrder(int const &id, int const &num, string const &trainId, string const &loc1, string const &loc2,
@@ -329,36 +355,17 @@ namespace arya {
         char catalog = tr.catalog;
         if (!tmp.first) {
             //create a new order
-            int cnt = ++ticket::orderCnt;
+            int cnt = ++orderCnt;
+            lastId.modify("order", orderCnt);
             ticket newTic(id, cnt, num, trainId, loc1, loc2, date, kind, catalog);
-            auto toInsert = sjtu::pair<int, ticket>(cnt, newTic);
             infoOrderId.insert(key, cnt);
             orderIdTicket.insert(cnt, newTic);
 
-            auto t1 = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind));
-            auto ticSet1 = t1.second;
-            ticSet1.insert(toInsert);
-            if (t1.first)
-                trKindTicket.modify(sjtu::tuple3<string, string, string>(trainId, date, kind), ticSet1);
-            else
-                trKindTicket.insert(sjtu::tuple3<string, string, string>(trainId, date, kind), ticSet1);
-
-            auto t2 = trDate.find(sjtu::pair<string, string>(trainId, date));
-            auto ticSet2 = t2.second;
-            ticSet2.insert(toInsert);
-            if (t2.first)
-                trDate.modify(sjtu::pair<string, string>(trainId, date), ticSet2);
-            else
-                trDate.insert(sjtu::pair<string, string>(trainId, date), ticSet2);
-
-            auto t3 = idTicket.find(sjtu::tuple3<int, string, char>(id, date, catalog));
-            auto ticSet3 = t3.second;
-            ticSet3.insert(toInsert);
-            if (t3.first)
-                idTicket.modify(sjtu::tuple3<int, string, char>(id, date, catalog), ticSet3);
-            else
-                idTicket.insert(sjtu::tuple3<int, string, char>(id, date, catalog), ticSet3);
-        } else {
+            trKindTicket.insert(sjtu::tuple3<string, string, string>(trainId, date, kind), cnt);
+            trDate.insert(sjtu::pair<string, string>(trainId, date), cnt);
+            idTicket.insert(sjtu::tuple3<int, string, char>(id, date, catalog), cnt);
+        }
+        else {
             modifyTicketSet(tmp.second, tr, id, num, trainId, date, kind);
             /*
             auto orderId = tmp.second;
@@ -390,14 +397,11 @@ namespace arya {
         if (!res.first)
             return false;
         train tr = res.second;
-        auto tmp = trKindTicket.find(sjtu::tuple3<string, string, string>(trainId, date, kind));
-        if (tmp.first) {
-            auto allTicket = tmp.second;
-            for (auto &it: allTicket) {
-                auto ticket = it.second;
-                if (intersect(tr, ticket, loc1, loc2)) {
-                    used += ticket.getNum();
-                }
+        auto tickets = trKindTicket.find_muti(sjtu::tuple3<string, string, string>(trainId, date, kind));
+        for(int i = 0; i < tickets.size(); ++i) {
+            auto ticket = getTicket(tickets[i]);
+            if (intersect(tr, ticket, loc1, loc2)) {
+                used += ticket.getNum();
             }
         }
         if (CAPACITY - used >= num) {
@@ -411,36 +415,37 @@ namespace arya {
         user u;
         if (!queryProfile(id, u))
             return false;
-        int len = catalog.length(), sum = 0;
-        sjtu::queue<ticketSet> que;
+        int len = catalog.length(), tot = 0;
+        ticket q[sjtu::MAX_TICKET];
         for (int i = 0; i < len; ++i) {
             char cat = catalog[i];
-            auto tmp = idTicket.find(sjtu::tuple3<int, string, char>(id, date, cat));
-            if (!tmp.first)
-                continue;
-            sum += tmp.second.size();
-            que.push(tmp.second);
+            auto tickets = idTicket.find_muti(sjtu::tuple3<int, string, char>(id, date, cat));
+            auto sz = tickets.size();
+            for(int j = 0; j < sz; ++j) {
+                auto tic = getTicket(tickets[j]);
+                if(tic.num == 0)
+                    continue;
+                q[++tot] = tic;
+                assert(tot < sjtu::MAX_TICKET);//TODO
+            }
         }
-        std::cout << sum << std::endl;
-        while (!que.empty()) {
-            auto ticketSet = que.front();
-            que.pop();
-            for (auto &it: ticketSet) {
-                auto tic = it.second;
+        std::cout << tot << std::endl;
+        for(int i = 1; i <= tot; ++i) {
+                auto tic = q[i];
                 auto tr = sale.find(tic.trainId).second;
+                PriceName pn = priceName.find(tic.trainId).second;
                 std::cout << tic.trainId << ' ';
-                std::cout << tic.loc1 << ' ' << sjtu::getStartTime(tr, date, tic.loc1) << ' ';
-                std::cout << tic.loc2 << ' ' << sjtu::getArriveTime(tr, date, tic.loc2);
+                std::cout << tic.loc1 << ' ' << getStartTime(tr, date, tic.loc1) << ' ';
+                std::cout << tic.loc2 << ' ' << getArriveTime(tr, date, tic.loc2);
                 for (int j = 0; j < tr.priceNum; ++j) {
-                    std::cout << ' ' << tr.priceName[j] << ' ';
-                    if (tr.priceName[j] == tic.kind)
+                    std::cout << ' ' << pn[j] << ' ';
+                    if (pn[j] == tic.kind)
                         std::cout << tic.num << ' ';
                     else
                         std::cout << "0 ";
-                    std::cout << sjtu::getPrice(tr, tic.loc1, tic.loc2, j);
+                    std::cout << getPrice(tr, tic.loc1, tic.loc2, j);
                 }
                 std::cout << std::endl;
-            }
         }
         return true;
     }
@@ -452,7 +457,7 @@ namespace arya {
         if (!tmp.first)
             return false;
         auto orderId = tmp.second;
-        auto tic = orderIdTicket.find(orderId).second;
+        auto tic = getTicket(orderId);
         auto tr = sale.find(trainId).second;
         if (tic.num < num)
             return false;
@@ -460,10 +465,36 @@ namespace arya {
         return true;
     }
 
-    bool addTrain(train const &tr) {
-        if (sale.find(tr.id).first || nSale.find(tr.id).first)
+    void printTrain(train const &tr) {
+        std::cout << tr << ' ';
+        PriceName pn = priceName.find(tr.id).second;
+        std::cout << pn << std::endl;
+
+        for(int i = 0; i < tr.stationNum; ++i) {
+            Station st = getStation(tr, i);
+            std::cout << st << std::endl;
+        }
+    }
+
+    bool addTrain(string const &id) {
+        bool flag = !(sale.find(id).first || nSale.find(id).first);
+        train newTr(id);
+        std::cin >> newTr;
+        PriceName pn(newTr.priceNum);
+        std::cin >> pn;
+
+        for(int i = 0; i < newTr.stationNum; ++i) {
+            Station newSt(newTr.priceNum);
+            std::cin >> newSt;
+            if(flag) {
+                newTr.stationId[i] = ++stationCnt;
+                station.insert(stationCnt, newSt);
+            }
+        }
+        if(!flag)
             return false;
-        nSale.insert(tr.id, tr);
+        priceName.insert(id, pn);
+        nSale.insert(id, newTr);
         return true;
     }
 
@@ -476,32 +507,18 @@ namespace arya {
         sale.insert(id, tr);
 
         char cat = tr.catalog;
+        string loc[sjtu::STATION_NUM];
         for (int i = 0; i < tr.stationNum; ++i) {
-            string loc1 = tr.stationName[i];
+            loc[i] = stationName(tr, i);
+        }
+        for (int i = 0; i < tr.stationNum; ++i) {
             for (int j = i + 1; j < tr.stationNum; ++j) {
-                string loc2 = tr.stationName[j];
-                auto key = sjtu::tuple3<string, string, char>(loc1, loc2, cat);
-                auto tmp = direct.find(key);
-                auto trainS = tmp.second;
-                trainS.insert(sjtu::pair<string, train>(id, tr));
-                if (tmp.first) {
-                    direct.modify(key, trainS);
-                } else {
-                    direct.insert(key, trainS);
-                }
+                auto key = sjtu::tuple3<string, string, char>(loc[i], loc[j], cat);
+                direct.insert(key, tr);
             }
         }
-
         for (int i = 0; i < tr.stationNum; ++i) {
-            string loc = tr.stationName[i];
-            auto tmp = locTrain.find(loc);
-            auto trainS = tmp.second;
-            trainS.insert(sjtu::pair<string, train>(loc, tr));
-            if (tmp.first) {
-                locTrain.modify(loc, trainS);
-            } else {
-                locTrain.insert(loc, trainS);
-            }
+            locTrain.insert(loc[i], tr);
         }
         return true;
     }
@@ -516,16 +533,38 @@ namespace arya {
     }
 
     bool deleteTrain(string const &id) {
-        if (!nSale.find(id).first)
+        auto tmp = nSale.find(id);
+        if (!tmp.first)
             return false;
+        train tr = tmp.second;
+        for(int i = 0; i < tr.stationNum; ++i)
+            station.erase(tr.stationId[i]);
         nSale.erase(id);
+        priceName.erase(id);
         return true;
     }
 
-    bool modifyTrain(train const &tr) {
-        if (!nSale.find(tr.id).first)
+    bool modifyTrain(string const &id) {
+        auto tmp = nSale.find(id);
+        train newTr(id);
+        std::cin >> newTr;
+        PriceName pn(newTr.priceNum);
+        std::cin >> pn;
+        for(int i = 0; i < newTr.stationNum; ++i) {
+            Station newSt(newTr.priceNum);
+            std::cin >> newSt;
+            if(tmp.first) {
+                newTr.stationId[i] = ++stationCnt;
+                station.insert(stationCnt, newSt);
+            }
+        }
+        if(!tmp.first)
             return false;
-        nSale.modify(tr.id, tr);
+        priceName.modify(id, pn);
+        nSale.modify(id, newTr);
+        train tr = tmp.second;
+        for(int i = 0; i < tr.stationNum; ++i)
+            station.erase(tr.stationId[i]);
         return true;
     }
 

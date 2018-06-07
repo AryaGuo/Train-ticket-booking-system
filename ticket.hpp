@@ -18,8 +18,6 @@ namespace sjtu
         char catalog;
 
     public:
-        static int orderCnt;
-
         ticket() {}
 
         ticket(int userId, int orderId, int num, string trainId, string loc1, string loc2, string date, string kind,
@@ -44,8 +42,6 @@ namespace sjtu
         }
 
     };
-
-    int ticket::orderCnt = 0;
 
 }
 

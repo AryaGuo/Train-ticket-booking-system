@@ -499,7 +499,7 @@ public:
 
         //    leaf_degree = branch_degree = 20;
 
-        std::cout<<"degree "<<leaf_degree<<' '<<branch_degree<<'\n';
+//        std::cout<<"degree "<<leaf_degree<<' '<<branch_degree<<'\n';
 
     }
 
