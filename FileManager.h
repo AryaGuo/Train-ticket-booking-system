@@ -6,6 +6,7 @@
 #include "BPlusTree.h"
 #include "constant.h"
 #include "Node.h"
+#include "utility.hpp"
 
 
 #define start 4096
@@ -33,6 +34,15 @@ private:
     char filename[100];
     FILE *file;
     bool isOpened;
+
+    bool Cmp(const Key_Type &x, const Key_Type &y) const{       ///<
+        static Compare _cmp;
+        return _cmp(x, y);
+    }
+    bool Equal(const Key_Type &x, const Key_Type &y) const{     /// ==
+        if ((Cmp(x, y) || Cmp(y, x))) return 0;
+        else return 1;
+    }
 
 
 public:
@@ -298,6 +308,49 @@ public:
     addType get_root()
     {
         return root_off;
+    }
+
+
+    sjtu::vector<Value_Type>traverse_nuti(const Key_Type &K)
+    {
+        sjtu::vector<Value_Type>ans;
+        if(head_off == -1)
+        {
+            return ans;
+        }
+        Node now;
+        get_block(head_off, now);
+        while(true)
+        {
+            if( Cmp( now.keys[now.keys.size()-1] ,K) )get_block(now.next, now);
+            else {
+                int i;
+                for( i = 0; i < now.keys.size(); ++i)
+                {
+                    if(now.keys[i] == K) break;
+                }
+                --i;
+                    while(1)
+                    {
+                        i++;
+                        if(now.keys[i] != K) break;
+                        ans.push_back(now.vals[i]);
+                        if(i == now.keys.size() - 1) {
+                                if(now.next == -1)
+                                {
+                                    return ans;
+                                }
+                                get_block(now.next,now); i = -1;
+                        }
+                    }
+
+                break;
+            }
+
+        }
+        return ans;
+
+
     }
 
 
