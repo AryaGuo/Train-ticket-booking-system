@@ -57,6 +57,9 @@ namespace sjtu {
         ElemType& operator[] (const short &pos) {
             return vec[pos];
         }
+        ElemType operator[] (const short &pos) const{
+            return vec[pos];
+        }
         void assign(const vector<ElemType> &other, const short &left, const short &right) {
             for(int i = left; i < right; i++) {
                 vec[i-left] = other.vec[i];
