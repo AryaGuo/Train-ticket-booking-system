@@ -63,11 +63,11 @@ namespace sjtu {
             }
             len = right - left;
         }
-        void file_read(FILE *&file, const short &item_num) {
+        void read_file(FILE *&file, const short &item_num) {
             len = item_num;
             fread(vec, sizeof(ElemType), (size_t) len, file);
         }
-        void file_write(FILE *&file) {
+        void write_file(FILE *&file) {
             fwrite(vec, sizeof(ElemType), (size_t) len, file);
         }
 
