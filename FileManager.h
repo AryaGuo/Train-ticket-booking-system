@@ -175,17 +175,14 @@ public:
     {
 
         ret.address = offset;
-        int xxx = fseek(file, offset, SEEK_SET);
-
-
+        fseek(file, offset, SEEK_SET);
+             
         fread(&ret.isLeaf, sizeof(bool), 1, file);
-  
         short K_size, V_size, Ch_size;
 
 
         fread(&K_size, sizeof(short), 1, file);
         if( K_size != 0)ret.keys.read_file(file, K_size);       else ret.keys.shorten_len(0);
-
 
 
         fread(&V_size, sizeof(short), 1, file);
@@ -250,8 +247,6 @@ public:
 
     void write_block(Node &now)
     {
-       // std::cout<<"address "<<now.address<<'\n';
-
         bool xxx = fseek(file, now.address, SEEK_SET);
         fwrite(&now.isLeaf, sizeof(bool), 1, file);
 
