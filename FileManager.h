@@ -64,16 +64,16 @@ private:
         if(file==nullptr)
         {
             createFile();
-            file = fopen(filename, "wb+");
+            file = fopen(filename, "r+b");
         }
         else
         {
-            file = fopen(filename, "wb+");
+            file = fopen(filename, "r+b");
             fread(&root_off, sizeof(int), 1, file);
             fread(&head_off, sizeof(int), 1, file);
             fread(&tail_off, sizeof(int), 1, file);
             fread(&append_off, sizeof(int), 1, file);
-           
+            //  std::cout<<root_off<<' '<<head_off<<' '<<tail_off<<' '<<append_off<<'\n';
         }
     }
 
@@ -122,10 +122,12 @@ public:
     {
         if(!isOpened)
         {
+            std::cout<<"false!";
             return false;
         }
         else
         {
+
             fseek(file, 0, SEEK_SET);
             fwrite(&root_off, sizeof(int), 1, file);
             fwrite(&head_off, sizeof(int), 1, file);
@@ -134,8 +136,14 @@ public:
             fclose(file);
 
             root_off = head_off = tail_off = -1;
+            std::cout<<1<<'\n';
+            system("pause");
             append_off = start;
+            std::cout<<1<<'\n';
+            system("pause");
             file = nullptr;
+            std::cout<<1<<'\n';
+            system("pause");
             isOpened = false;
 
             return true;
@@ -159,6 +167,8 @@ public:
             fwrite(&head_off, sizeof(int), 1, file);
             fwrite(&tail_off, sizeof(int), 1, file);
             fwrite(&append_off, sizeof(int), 1, file);
+
+
             return true;
         }
     }
@@ -174,15 +184,23 @@ public:
     void get_block(addType offset, Node &ret)
     {
 
+        //std::cout<<"offset:"<<offset<<'\n';
         ret.address = offset;
-        fseek(file, offset, SEEK_SET);
-             
+
+
+        int xxx = fseek(file, offset, SEEK_SET);
+        //std::cout<<xxx<<'\n';
+
         fread(&ret.isLeaf, sizeof(bool), 1, file);
+        //std::cout<<"isleaf:"<<ret.isLeaf<<'\n';
         short K_size, V_size, Ch_size;
 
+        short aa,bb,cc;
+        int xxxx;
 
         fread(&K_size, sizeof(short), 1, file);
         if( K_size != 0)ret.keys.read_file(file, K_size);       else ret.keys.shorten_len(0);
+
 
 
         fread(&V_size, sizeof(short), 1, file);
@@ -209,14 +227,15 @@ public:
 
     bool get_root(Node &ret)
     {
-        if(root_off == -1)  return false;
-        else get_block(root_off, ret);
+        if(root_off == -1) {          return false;}
+        else
+            {  get_block(root_off, ret);}
         return true;
     }
     bool get_head(Node &ret)
     {
         if(head_off == -1) return false;
-             
+
         if(head_off == 0)
             get_block(tree_utility_byte, ret);
         else
@@ -247,6 +266,8 @@ public:
 
     void write_block(Node &now)
     {
+       // std::cout<<"address "<<now.address<<'\n';
+
         bool xxx = fseek(file, now.address, SEEK_SET);
         fwrite(&now.isLeaf, sizeof(bool), 1, file);
 
