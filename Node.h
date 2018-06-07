@@ -4,12 +4,13 @@
 #include "vector.h"
 #include "constant.h"
 
+
 namespace sjtu {
 
         template<class Key_Type,
                 class Value_Type,
                 class Compare = std::less<Key_Type>,
-                class Compare_child = std::less<addType>
+                class Compare_value = std::less<Value_Type>
              >
         class TreeNode {
         public:
@@ -33,15 +34,17 @@ namespace sjtu {
             else return 1;
         }
 
-
-        bool Cmp_child(const addType &x, const addType &y) const{       ///<
-            static Compare_child _cmp;
+        bool Cmp_value(const Value_Type &x, const Value_Type &y) const        ///<
+        {
+            static Compare_value _cmp;
             return _cmp(x, y);
         }
-        bool Equal_child(const addType &x, const addType &y) const{     /// ==
-            if ((Cmp(x, y) || Cmp(y, x))) return 0;
+        bool Equal_value(const Value_Type &x, const Value_Type &y) const      /// ==
+        {
+            if (Cmp_value(x, y) || Cmp_value(y, x)) return 0;
             else return 1;
         }
+
 
 
 
@@ -97,6 +100,7 @@ namespace sjtu {
                     else
                         high = mid;
                 }
+
                 while (low < keys.size() && !Cmp(K,keys[low])) ++low;
                 if (low == keys.size()) return -1;
                 else return low;
@@ -151,7 +155,7 @@ namespace sjtu {
         int search_child(addType child) {
             if(childs.size() < 10) {
                 int i = 0;
-                while (i < childs.size() && !Equal_child(childs[i],child)) ++i;
+                while (i < childs.size() && childs[i]!= child) ++i;
                 if (i == childs.size()) {
                     return -1;
                 }
@@ -162,14 +166,14 @@ namespace sjtu {
                 int mid;
                 while(high - low >= 10) {
                     mid = (low + high) / 2;
-                    if(Equal_child(childs[mid],child))
+                    if(childs[mid]==child)
                         return mid;
-                    else if(Cmp_child(childs[mid],child))
+                    else if(childs[mid]<child)
                         low = mid;
                     else
                         high = mid;
                 }
-                while (low < childs.size() && !Equal_child(childs[low],child)) ++low;
+                while (low < childs.size() && childs[low]!=child) ++low;
 
                 if (low == childs.size()) return -1;
                 else return low;
