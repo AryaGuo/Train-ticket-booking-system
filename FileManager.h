@@ -54,17 +54,29 @@ public:
     addType append_off;
 private:
 
+
+    struct one{
+        addType root_offx;
+        addType head_offx;
+        addType tail_offx;
+        addType append_offx;
+        char coushu[4096-16];
+    }begin_block;
+
+
+
+
     void createFile()
     {
         file = fopen(filename, "wb");
-
+        char cou[4096-16] = {'a'};
         root_off = head_off = tail_off = -1;
         append_off = start;
         fwrite(&root_off, sizeof(int), 1, file);
         fwrite(&head_off, sizeof(int), 1, file);
         fwrite(&tail_off, sizeof(int), 1, file);
         fwrite(&append_off, sizeof(int), 1, file);
-
+        fwrite(&cou,sizeof(char),4080,file);
         fclose(file);
     }
 
@@ -79,10 +91,12 @@ private:
         else
         {
             file = fopen(filename, "r+b");
-            fread(&root_off, sizeof(int), 1, file);
-            fread(&head_off, sizeof(int), 1, file);
-            fread(&tail_off, sizeof(int), 1, file);
-            fread(&append_off, sizeof(int), 1, file);
+            fread(&begin_block,sizeof(one),1,file);
+            root_off = begin_block.root_offx;
+            head_off = begin_block.head_offx;
+            tail_off = begin_block.tail_offx;
+            append_off = begin_block.append_offx;
+
             //  std::cout<<root_off<<' '<<head_off<<' '<<tail_off<<' '<<append_off<<'\n';
         }
     }
@@ -146,14 +160,14 @@ public:
             fclose(file);
 
             root_off = head_off = tail_off = -1;
-            /*std::cout<<1<<'\n';
-            system("pause");
+           // std::cout<<1<<'\n';
+           // system("pause");
             append_off = start;
-            std::cout<<1<<'\n';
-            system("pause");
+           // std::cout<<1<<'\n';
+           // system("pause");
             file = nullptr;
-            std::cout<<1<<'\n';
-            system("pause");*/
+           // std::cout<<1<<'\n';
+           // system("pause");
             isOpened = false;
 
             return true;
@@ -198,15 +212,13 @@ public:
         ret.address = offset;
 
 
-        int xxx = fseek(file, offset, SEEK_SET);
+        fseek(file, offset, SEEK_SET);
         //std::cout<<xxx<<'\n';
 
         fread(&ret.isLeaf, sizeof(bool), 1, file);
         //std::cout<<"isleaf:"<<ret.isLeaf<<'\n';
         short K_size, V_size, Ch_size;
 
-        short aa,bb,cc;
-        int xxxx;
 
         fread(&K_size, sizeof(short), 1, file);
         if( K_size != 0)ret.keys.read_file(file, K_size);       else ret.keys.shorten_len(0);
@@ -247,7 +259,7 @@ public:
         if(head_off == -1) return false;
 
         if(head_off == 0)
-            get_block(tree_utility_byte, ret);
+            get_block(start, ret);
         else
             get_block(head_off, ret);
         return true;
@@ -257,7 +269,7 @@ public:
         if(tail_off == -1) return false;
 
         if(tail_off == 0)
-            get_block(tree_utility_byte, ret);
+            get_block(start, ret);
         else
             get_block(tail_off, ret);
         return true;
@@ -276,11 +288,9 @@ public:
 
     void write_block(Node &now)
     {
-       // std::cout<<"address "<<now.address<<'\n';
 
-        bool xxx = fseek(file, now.address, SEEK_SET);
+        fseek(file, now.address, SEEK_SET);
         fwrite(&now.isLeaf, sizeof(bool), 1, file);
-
 
         short write_in = now.keys.size();
 
@@ -311,7 +321,7 @@ public:
     }
 
 
-    sjtu::vector<Value_Type>traverse_nuti(const Key_Type &K)
+    sjtu::vector<Value_Type>traverse_muti(const Key_Type &K)
     {
         sjtu::vector<Value_Type>ans;
         if(head_off == -1)
@@ -322,11 +332,12 @@ public:
         get_block(head_off, now);
         while(true)
         {
-            if( Cmp( now.keys[now.keys.size()-1] ,K) ) {
-                if(now.next != -1)
-                    get_block(now.next, now);
-                else    return ans;
+            if( Cmp( now.keys[now.keys.size()-1] ,K) ){
+                    if(now.next != -1)
+                        get_block(now.next, now);
+                    else return ans;
             }
+
             else {
                 int i;
 
@@ -368,10 +379,8 @@ public:
                                 get_block(now.next,now); i = -1;
                         }
                     }
-
                 break;
             }
-
         }
         return ans;
 
