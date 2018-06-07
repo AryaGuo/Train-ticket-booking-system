@@ -67,17 +67,15 @@ private:
     struct two{
         addType addressx;
         bool isLeafx;
-        short child_lenx;
-        sjtu::vector<addType> childsx;
-        short keys_lenx;
+        //short k_size;
         sjtu::vector<Key_Type> keys;
-        short vals_lenx;
+       //short v_size;
         sjtu::vector<Value_Type> vals;
-
+        //short ch_size;
+        sjtu::vector<addType> childs;
         addType next;
-        char coushu[4096-15] = {'a'};
-
-    };
+        char coucou[4096-15] = {'a'};
+        };
 
 
 
@@ -301,22 +299,19 @@ public:
     {
 
         fseek(file, now.address, SEEK_SET);
-        fwrite(&now.isLeaf, sizeof(bool), 1, file);
+        fseek(file,-4,SEEK_CUR);
+        two write_in;
+        write_in.addressx = now.address;
+        write_in.isLeafx = now.isLeaf;
+        //write_in.k_size = now.keys.size();
+        write_in.keys = now.keys;
+        //write_in.v_size = now.vals.size();
+        write_in.vals = now.vals;
+        //write_in.ch_size = now.childs.size();
+        write_in.childs = now.childs;
+        write_in.next = now.next;
 
-        short write_in = now.keys.size();
-
-        fwrite(&write_in, sizeof(short), 1, file);
-        if(now.keys.size()!= 0)      now.keys.write_file(file);
-        write_in = now.vals.size();
-
-        fwrite(&write_in, sizeof(short), 1, file);
-        if(now.vals.size()!= 0)     now.vals.write_file(file);
-
-        write_in = now.childs.size();
-        fwrite(&write_in, sizeof(short), 1, file);
-        if(now.childs.size()!= 0)   now.childs.write_file(file);
-
-        fwrite(&now.next, sizeof(addType), 1, file);
+        fwrite(&write_in,1,4096,file);
 
     }
 
