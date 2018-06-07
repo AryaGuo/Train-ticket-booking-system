@@ -56,27 +56,38 @@ private:
 
 
     struct one{
-        addType root_offx;
-        addType head_offx;
-        addType tail_offx;
-        addType append_offx;
-        char coushu[4096-16];
+        addType root_offx = -1;
+        addType head_offx = -1;
+        addType tail_offx = -1;
+        addType append_offx = start;
+        char coushu[4096-16] = {'a'};
     }begin_block;
 
+
+    struct two{
+        addType addressx;
+        bool isLeafx;
+        short child_lenx;
+        sjtu::vector<addType> childsx;
+        short keys_lenx;
+        sjtu::vector<Key_Type> keys;
+        short vals_lenx;
+        sjtu::vector<Value_Type> vals;
+
+        addType next;
+        char coushu[4096-15] = {'a'};
+
+    };
 
 
 
     void createFile()
     {
         file = fopen(filename, "wb");
-        char cou[4096-16] = {'a'};
         root_off = head_off = tail_off = -1;
         append_off = start;
-        fwrite(&root_off, sizeof(int), 1, file);
-        fwrite(&head_off, sizeof(int), 1, file);
-        fwrite(&tail_off, sizeof(int), 1, file);
-        fwrite(&append_off, sizeof(int), 1, file);
-        fwrite(&cou,sizeof(char),4080,file);
+        one create;
+        fwrite(&create,sizeof(one),1,file);
         fclose(file);
     }
 
