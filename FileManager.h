@@ -30,9 +30,8 @@ class FileManager
 private:
     typedef TreeNode<Key_Type, Value_Type> Node;
 
-    char filename[50];
+    char filename[100];
     FILE *file;
-
     bool isOpened;
 
 
@@ -47,7 +46,7 @@ private:
 
     void createFile()
     {
-        file = fopen(filename, "w");
+        file = fopen(filename, "wb");
 
         root_off = head_off = tail_off = -1;
         append_off = start;
@@ -65,16 +64,16 @@ private:
         if(file==nullptr)
         {
             createFile();
-            file = fopen(filename, "r+");
+            file = fopen(filename, "wb+");
         }
         else
         {
-            file = fopen(filename, "r+");
+            file = fopen(filename, "wb+");
             fread(&root_off, sizeof(int), 1, file);
             fread(&head_off, sizeof(int), 1, file);
             fread(&tail_off, sizeof(int), 1, file);
             fread(&append_off, sizeof(int), 1, file);
-            //  std::cout<<root_off<<' '<<head_off<<' '<<tail_off<<' '<<append_off<<'\n';
+           
         }
     }
 
@@ -153,13 +152,13 @@ public:
             root_off = head_off = tail_off = -1;
             append_off = start;
             file = fopen(filename,"w+");
+            fclose(file);
+            file = fopen(filename,"wb+");
             fseek(file, 0, SEEK_SET);
             fwrite(&root_off, sizeof(int), 1, file);
             fwrite(&head_off, sizeof(int), 1, file);
             fwrite(&tail_off, sizeof(int), 1, file);
             fwrite(&append_off, sizeof(int), 1, file);
-
-
             return true;
         }
     }
@@ -171,20 +170,29 @@ public:
         return isOpened;
     }
 
+
     void get_block(addType offset, Node &ret)
     {
+
         ret.address = offset;
-        fseek(file, offset, SEEK_SET);
+        int xxx = fseek(file, offset, SEEK_SET);
+
 
         fread(&ret.isLeaf, sizeof(bool), 1, file);
+  
         short K_size, V_size, Ch_size;
-        fread(&K_size, sizeof(short), 1, file);
-        fread(&V_size, sizeof(short), 1, file);
-        fread(&Ch_size, sizeof(short), 1, file);
 
-        if( K_size != 0)ret.keys.file_read(file, K_size);       else ret.keys.shorten_len(0);
-        if( V_size != 0)ret.vals.file_read(file, V_size);       else ret.vals.shorten_len(0);
-        if( Ch_size != 0)ret.childs.file_read(file, Ch_size);   else ret.childs.shorten_len(0);
+
+        fread(&K_size, sizeof(short), 1, file);
+        if( K_size != 0)ret.keys.read_file(file, K_size);       else ret.keys.shorten_len(0);
+
+
+
+        fread(&V_size, sizeof(short), 1, file);
+        if( V_size != 0)ret.vals.read_file(file, V_size);       else ret.vals.shorten_len(0);
+
+        fread(&Ch_size, sizeof(short), 1, file);
+        if( Ch_size != 0)ret.childs.read_file(file, Ch_size);   else ret.childs.shorten_len(0);
 
         fread(&ret.next, sizeof(addType), 1, file);
     }
@@ -204,15 +212,14 @@ public:
 
     bool get_root(Node &ret)
     {
-        if(root_off == -1) {   return false;}
-        else
-            {  get_block(root_off, ret);}
+        if(root_off == -1)  return false;
+        else get_block(root_off, ret);
         return true;
     }
     bool get_head(Node &ret)
     {
         if(head_off == -1) return false;
-
+             
         if(head_off == 0)
             get_block(tree_utility_byte, ret);
         else
@@ -240,42 +247,36 @@ public:
         append_off += BlockSize;
     }
 
-    void write_block(Node &cur)
+
+    void write_block(Node &now)
     {
-        fseek(file, cur.address, SEEK_SET);
+       // std::cout<<"address "<<now.address<<'\n';
 
-        fwrite(&cur.isLeaf, sizeof(bool), 1, file);
+        bool xxx = fseek(file, now.address, SEEK_SET);
+        fwrite(&now.isLeaf, sizeof(bool), 1, file);
 
-        short   tmp = cur.keys.size();              fwrite(&tmp, sizeof(short), 1, file);
-                tmp = cur.vals.size();              fwrite(&tmp, sizeof(short), 1, file);
-                tmp = cur.childs.size();            fwrite(&tmp, sizeof(short), 1, file);
 
-        if(cur.keys.size()!= 0)cur.keys.file_write(file);
-        if(cur.vals.size()!= 0)cur.vals.file_write(file);
-        if(cur.childs.size()!= 0)cur.childs.file_write(file);
-        fwrite(&cur.next, sizeof(addType), 1, file);
+        short write_in = now.keys.size();
+
+        fwrite(&write_in, sizeof(short), 1, file);
+        if(now.keys.size()!= 0)      now.keys.write_file(file);
+        write_in = now.vals.size();
+
+        fwrite(&write_in, sizeof(short), 1, file);
+        if(now.vals.size()!= 0)     now.vals.write_file(file);
+
+        write_in = now.childs.size();
+        fwrite(&write_in, sizeof(short), 1, file);
+        if(now.childs.size()!= 0)   now.childs.write_file(file);
+
+        fwrite(&now.next, sizeof(addType), 1, file);
+
     }
 
-    void write_block_skip_father(Node &cur)
+
+    void set_root(addType offset)
     {
-        fseek(file, cur.address, SEEK_SET);
-
-        fwrite(&cur.isLeaf,sizeof(bool), 1, file);
-
-        short   tmp = cur.keys.size();          fwrite(&tmp, sizeof(short), 1, file);
-                tmp = cur.vals.size();          fwrite(&tmp, sizeof(short), 1, file);
-                tmp = cur.childs.size();        fwrite(&tmp, sizeof(short), 1, file);
-
-        cur.keys.file_write(file);
-        cur.vals.file_write(file);
-        cur.childs.file_write(file);
-
-        fseek(file, sizeof(addType), SEEK_CUR);
-        fwrite(&cur.next, sizeof(addType), 1, file);
-    }
-    void set_root(addType rtoff)
-    {
-        root_off = rtoff;
+        root_off = offset;
     }
 
     addType get_root()
@@ -288,21 +289,21 @@ public:
     {
         if(head_off == -1)
         {
-            printf("traverse empty tree\n");
+            std::cout<<"empty!\n";
             return;
         }
         std::cout<<root_off<<"root_off\n";
-        Node cur;
-        get_block(head_off, cur);
+        Node now;
+        get_block(head_off, now);
 
         while(true)
         {
-            for(int i = 0; i < cur.keys.size(); ++i)
-                std::cout << cur.keys[i] << ' ' << cur.vals[i] << std::endl;
+            for(int i = 0; i < now.keys.size(); ++i)
+                std::cout << now.keys[i] << ' ' << now.vals[i] << std::endl;
 
-            if(cur.next == -1)
+            if(now.next == -1)
                 break;
-            get_block(cur.next, cur);
+            get_block(now.next, now);
         }
     }
 };
