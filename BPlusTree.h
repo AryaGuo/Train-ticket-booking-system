@@ -14,7 +14,7 @@ namespace sjtu
 template<class Key_Type,
          class Value_Type,
          class Compare = std::less<Key_Type>,
-         class Compare_child = std::less<addType>
+         class Compare_value = std::less<Value_Type>
          >
 /**
 b+树本体
@@ -33,14 +33,14 @@ class BPlusTree
     }
 
 
-    bool Cmp_child(const addType &x, const addType &y) const        ///<
+    bool Cmp_value(const Value_Type &x, const Value_Type &y) const        ///<
     {
-        static Compare_child _cmp;
+        static Compare_value _cmp;
         return _cmp(x, y);
     }
-    bool Equal_child(const addType &x, const addType &y) const      /// ==
+    bool Equal_value(const Value_Type &x, const Value_Type &y) const      /// ==
     {
-        if (Cmp(x, y) || Cmp(y, x)) return 0;
+        if (Cmp_value(x, y) || Cmp_value(y, x)) return 0;
         else return 1;
     }
 
@@ -338,24 +338,21 @@ private:
 
     Key_Type split_branch(Node &B, Node &B_next)
     {
-        int mid = (int) ceil(branch_degree / 2.0);
+        int mid = (int)(branch_degree / 2.0);
         Key_Type mid_key = B.keys[mid - 1];
 
-        B_next.childs.assign(B.childs, mid, B.childs.size());
-        B_next.keys.assign(B.keys, mid, B.keys.size());
+        B_next.childs.assign(B.childs, B.childs.size()/2, B.childs.size());
+        B_next.keys.assign(B.keys, B.childs.size()/2, B.keys.size());
 
-        B.childs.shorten_len(mid);
-        B.keys.shorten_len(mid - 1);
-        return mid_key;
+        B.childs.shorten_len(B.childs.size()/2);
+        B.keys.shorten_len(B.keys.size()/2 - 1);
+        return B.keys[  (B.childs.size() - 1)/2         ];
     }
 
     void split_leaf(Node &L, Node &L_next)
     {
-        int mid = (int) std::ceil((leaf_degree) / (2.0));
-
         L_next.keys.assign(L.keys, L.keys.size()/2, L.keys.size());
         L_next.vals.assign(L.vals, L.vals.size()/2, L.vals.size());
-        //std::cout<<"assign\n";
         L.keys.shorten_len(L.keys.size()/2);
         L.vals.shorten_len(L.vals.size()/2);
     }
@@ -546,6 +543,26 @@ public:
         return ans;
     }
 
+
+
+    bool erase_muti(const Key_Type &K, const Value_Type &V)
+    {
+        sjtu::vector<Value_Type> tem = find_muti(K);
+        if(tem.size() == 0) return false;
+
+        while(  erase(K)    ){
+
+        }
+
+        for(int i = 0; i < tem.size(); ++i)
+        {
+            if(!Equal_value(V,tem[i])) insert(K,tem[i]);
+        }
+
+        return true;
+
+
+    }
 
 
     pair<bool, Value_Type> find(const Key_Type &K)
