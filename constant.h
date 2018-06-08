@@ -27,7 +27,6 @@ namespace sjtu {
     const int STATION_NUM = 60;
     const int PRICE_NUM = 5;
 
-    const int MAX_TICKET = 200;
     const int MAX_DIRECT = 200;
 };
 

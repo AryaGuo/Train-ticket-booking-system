@@ -148,7 +148,8 @@ void modifyTrain()
     std::cout << modifyTrain(id) << std::endl;
 }
 
-void modifyValue(int &val, const string &key, const int &st) {
+void modifyValue(int &val, const string &key, const int &st)
+{
     val = st;
     lastId.modify(key, val);
 }
@@ -175,7 +176,8 @@ void clean()
     std::cout << 1 << std::endl;
 }
 
-void setValue(int &val, const string &key, const int &st) {
+void setValue(int &val, const string &key, const int &st)
+{
     auto id = lastId.find(key);
     if(id.first)
         val = id.second;
@@ -226,8 +228,8 @@ void close()
 int main()
 {
     std::ios::sync_with_stdio(false);
-    std::cin.tie(0);
-//    freopen("test.in", "r", stdin);
+    std::cin.tie(nullptr);
+    freopen("4.in", "r", stdin);
 //    freopen("test.out", "w", stdout);
 
     const int funcNum = 17;
@@ -253,10 +255,10 @@ int main()
     void (*func[funcNum])() = {Register, queryProfile, modifyProfile, modifyPrivilege, queryTicket, queryTransfer, buyTicket,
                           queryOrder, refundTicket, addTrain, saleTrain, queryTrain, deleteTrain, modifyTrain, clean, login};
     init();
-//    clean();    //TODO
+//     clean();    //TODO
     int tot = 0;
 //    while(true)
-    while(tot <= 100000)    //TODO
+    while(tot <= 1000000)    //TODO
     {
         tot++;
         bool flag = false;

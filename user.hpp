@@ -16,23 +16,14 @@ namespace sjtu
     public:
         string name, pwd, email, phone;
         bool loginSta;
-
-    public:
-
         int id, priv;
 
+    public:
         user(): name(), pwd(), email(), phone() {
             id = -1;
             priv = 0;
             loginSta = false;
         }
-
-        user(const user &other):
-                id(other.id), priv(other.priv), name(other.name), pwd(other.pwd), email(other.email), phone(other.phone),
-                loginSta(other.loginSta) {}
-
-        user(string const &name, string const &pwd, string const &email, string const &phone):
-                name(name), pwd(pwd), email(email), phone(phone), id(-1), priv(0), loginSta(false) {}
 
         int getPri() {
             return priv;
