@@ -146,14 +146,14 @@ public:
             fclose(file);
 
             root_off = head_off = tail_off = -1;
-            std::cout<<1<<'\n';
-            system("pause");
+     //       std::cout<<1<<'\n';
+     //       system("pause");
             append_off = start;
-            std::cout<<1<<'\n';
-            system("pause");
+     //       std::cout<<1<<'\n';
+      //      system("pause");
             file = nullptr;
-            std::cout<<1<<'\n';
-            system("pause");
+        //    std::cout<<1<<'\n';
+       //     system("pause");
             isOpened = false;
 
             return true;
@@ -331,13 +331,13 @@ public:
                 int i;
                 for( i = 0; i < now.keys.size(); ++i)
                 {
-                    if(now.keys[i] == K) break;
+                    if(Equal(now.keys[i], K)) break;
                 }
                 --i;
                     while(1)
                     {
                         i++;
-                        if(now.keys[i] != K) break;
+                        if(!Equal(now.keys[i], K)) break;
                         ans.push_back(now.vals[i]);
                         if(i == now.keys.size() - 1) {
                                 if(now.next == -1)
