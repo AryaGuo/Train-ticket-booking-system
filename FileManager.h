@@ -354,7 +354,6 @@ public:
         }
         return ans;
 
-
     }
 
 
@@ -368,16 +367,20 @@ public:
         std::cout<<root_off<<"root_off\n";
         Node now;
         get_block(head_off, now);
+        int ans = 0;
 
         while(true)
         {
-            for(int i = 0; i < now.keys.size(); ++i)
-                std::cout << now.keys[i] << ' ' << now.vals[i] << std::endl;
+            for(int i = 0; i < now.keys.size(); ++i){
+                ans++;
+            }
+                //std::cout << now.keys[i] << ' ' << now.vals[i] << std::endl;
 
             if(now.next == -1)
                 break;
             get_block(now.next, now);
         }
+        std::cout<<ans;
     }
 };
 
