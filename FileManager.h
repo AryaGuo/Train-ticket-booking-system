@@ -54,38 +54,17 @@ public:
     addType append_off;
 private:
 
-
-    struct one{
-        addType root_offx = -1;
-        addType head_offx = -1;
-        addType tail_offx = -1;
-        addType append_offx = start;
-        char coushu[4096-16] = {'a'};
-    }begin_block;
-
-
-    struct two{
-        addType addressx;
-        bool isLeafx;
-        //short k_size;
-        sjtu::vector<Key_Type> keys;
-       //short v_size;
-        sjtu::vector<Value_Type> vals;
-        //short ch_size;
-        sjtu::vector<addType> childs;
-        addType next;
-        char coucou[4096-15] = {'a'};
-        };
-
-
-
     void createFile()
     {
         file = fopen(filename, "wb");
+
         root_off = head_off = tail_off = -1;
         append_off = start;
-        one create;
-        fwrite(&create,sizeof(one),1,file);
+        fwrite(&root_off, sizeof(int), 1, file);
+        fwrite(&head_off, sizeof(int), 1, file);
+        fwrite(&tail_off, sizeof(int), 1, file);
+        fwrite(&append_off, sizeof(int), 1, file);
+
         fclose(file);
     }
 
@@ -100,12 +79,10 @@ private:
         else
         {
             file = fopen(filename, "r+b");
-            fread(&begin_block,sizeof(one),1,file);
-            root_off = begin_block.root_offx;
-            head_off = begin_block.head_offx;
-            tail_off = begin_block.tail_offx;
-            append_off = begin_block.append_offx;
-
+            fread(&root_off, sizeof(int), 1, file);
+            fread(&head_off, sizeof(int), 1, file);
+            fread(&tail_off, sizeof(int), 1, file);
+            fread(&append_off, sizeof(int), 1, file);
             //  std::cout<<root_off<<' '<<head_off<<' '<<tail_off<<' '<<append_off<<'\n';
         }
     }
@@ -169,14 +146,14 @@ public:
             fclose(file);
 
             root_off = head_off = tail_off = -1;
-           // std::cout<<1<<'\n';
-           // system("pause");
+            std::cout<<1<<'\n';
+            system("pause");
             append_off = start;
-           // std::cout<<1<<'\n';
-           // system("pause");
+            std::cout<<1<<'\n';
+            system("pause");
             file = nullptr;
-           // std::cout<<1<<'\n';
-           // system("pause");
+            std::cout<<1<<'\n';
+            system("pause");
             isOpened = false;
 
             return true;
@@ -221,13 +198,15 @@ public:
         ret.address = offset;
 
 
-        fseek(file, offset, SEEK_SET);
+        int xxx = fseek(file, offset, SEEK_SET);
         //std::cout<<xxx<<'\n';
 
         fread(&ret.isLeaf, sizeof(bool), 1, file);
         //std::cout<<"isleaf:"<<ret.isLeaf<<'\n';
         short K_size, V_size, Ch_size;
 
+        short aa,bb,cc;
+        int xxxx;
 
         fread(&K_size, sizeof(short), 1, file);
         if( K_size != 0)ret.keys.read_file(file, K_size);       else ret.keys.shorten_len(0);
@@ -268,7 +247,7 @@ public:
         if(head_off == -1) return false;
 
         if(head_off == 0)
-            get_block(start, ret);
+            get_block(tree_utility_byte, ret);
         else
             get_block(head_off, ret);
         return true;
@@ -278,7 +257,7 @@ public:
         if(tail_off == -1) return false;
 
         if(tail_off == 0)
-            get_block(start, ret);
+            get_block(tree_utility_byte, ret);
         else
             get_block(tail_off, ret);
         return true;
@@ -297,21 +276,26 @@ public:
 
     void write_block(Node &now)
     {
+       // std::cout<<"address "<<now.address<<'\n';
 
-        fseek(file, now.address, SEEK_SET);
-        fseek(file,-4,SEEK_CUR);
-        two write_in;
-        write_in.addressx = now.address;
-        write_in.isLeafx = now.isLeaf;
-        //write_in.k_size = now.keys.size();
-        write_in.keys = now.keys;
-        //write_in.v_size = now.vals.size();
-        write_in.vals = now.vals;
-        //write_in.ch_size = now.childs.size();
-        write_in.childs = now.childs;
-        write_in.next = now.next;
+        bool xxx = fseek(file, now.address, SEEK_SET);
+        fwrite(&now.isLeaf, sizeof(bool), 1, file);
 
-        fwrite(&write_in,1,4096,file);
+
+        short write_in = now.keys.size();
+
+        fwrite(&write_in, sizeof(short), 1, file);
+        if(now.keys.size()!= 0)      now.keys.write_file(file);
+        write_in = now.vals.size();
+
+        fwrite(&write_in, sizeof(short), 1, file);
+        if(now.vals.size()!= 0)     now.vals.write_file(file);
+
+        write_in = now.childs.size();
+        fwrite(&write_in, sizeof(short), 1, file);
+        if(now.childs.size()!= 0)   now.childs.write_file(file);
+
+        fwrite(&now.next, sizeof(addType), 1, file);
 
     }
 
@@ -340,42 +324,20 @@ public:
         {
             if( Cmp( now.keys[now.keys.size()-1] ,K) ){
                     if(now.next != -1)
-                        get_block(now.next, now);
+                    get_block(now.next, now);
                     else return ans;
             }
-
             else {
                 int i;
-
-                if(now.keys.size() < 10)
+                for( i = 0; i < now.keys.size(); ++i)
                 {
-                    for( i = 0; i < now.keys.size(); ++i)
-                    {
-                    if(Equal(now.keys[i],K)) break;
-                    }
-
-                }
-                else
-                {
-                    int low = 0, high = now.keys.size() - 1;
-                    int mid;
-                    while(high - low >= 10) {
-                        mid = (low + high) / 2;
-                        if( Equal(K,now.keys[mid]) )
-                            high = mid;
-                        else if( Cmp(now.keys[mid] , K))
-                            low = mid;
-                        else
-                            high = mid;
-                    }
-                    while (low < now.keys.size() && !Equal(K,now.keys[low]) ) ++low;
-                    i = low;
+                    if(now.keys[i] == K) break;
                 }
                 --i;
                     while(1)
                     {
                         i++;
-                        if(!Equal(now.keys[i] , K) ) break;
+                        if(now.keys[i] != K) break;
                         ans.push_back(now.vals[i]);
                         if(i == now.keys.size() - 1) {
                                 if(now.next == -1)
@@ -385,8 +347,10 @@ public:
                                 get_block(now.next,now); i = -1;
                         }
                     }
+
                 break;
             }
+
         }
         return ans;
 
