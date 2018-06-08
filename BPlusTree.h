@@ -150,7 +150,7 @@ private:
 
                     K_bt = cur.keys[key_pos];
 
-                    if(ch.keys.size() + sbl.keys.size() <= leaf_degree)     /**  可以放一起就放一起喽   */
+                    if(ch.keys.size() + sbl.keys.size() <= leaf_degree)
                     {
 
                         l_node->next = r_node->next;
@@ -351,6 +351,7 @@ private:
 
     void split_leaf(Node &L, Node &L_next)
     {
+
         L_next.keys.assign(L.keys, L.keys.size()/2, L.keys.size());
         L_next.vals.assign(L.vals, L.vals.size()/2, L.vals.size());
         L.keys.shorten_len(L.keys.size()/2);
@@ -412,13 +413,16 @@ private:
                     Node &newLeaf = pool[cnt++];
                     bm.append_block(newLeaf, true);
 
-                    newLeaf.next = ch.next;
-                    ch.next = newLeaf.address;
-                    newLeaf.next  = -1;
+
+
                     if (bm.tail_off == ch.address)
                         bm.tail_off = newLeaf.address;
 
                     split_leaf(ch, newLeaf);
+                    newLeaf.next = ch.next;
+                    ch.next = newLeaf.address;
+
+
                     cur.childs.insert(ch_pos + 1, newLeaf.address);
                     cur.keys.insert(ch_pos, newLeaf.keys[0]);
 
@@ -499,7 +503,7 @@ public:
 
         //    leaf_degree = branch_degree = 20;
 
-//        std::cout<<"degree "<<leaf_degree<<' '<<branch_degree<<'\n';
+        std::cout<<"degree "<<leaf_degree<<' '<<branch_degree<<'\n';
 
     }
 
@@ -538,7 +542,7 @@ public:
 
     sjtu::vector<Value_Type> find_muti(const Key_Type &K)
     {
-        sjtu::vector<Value_Type>   ans= bm.traverse_nuti(K);
+        sjtu::vector<Value_Type> ans= bm.traverse_muti(K);
 
         return ans;
     }
