@@ -116,10 +116,6 @@ private:
                     int key_pos;
                     Key_Type K_bt;
                     Node *l_node, *r_node;
-                    if(cur.childs.size() == 1)
-                    {  // std::cout<<"too small\n";
-                       // system("pause");
-                            }
                     if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
@@ -239,12 +235,6 @@ private:
                     int key_pos;
                     Key_Type K_bt;
                     Node *l_node, *r_node;
-
-                    if(cur.childs.size() == 1)
-                    {
-                       // std::cout<<"===1\n";
-                        //system("pause");
-                    }
                     if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
