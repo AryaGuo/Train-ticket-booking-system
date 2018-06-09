@@ -24,7 +24,7 @@ namespace sjtu
 template<class Key_Type,
          class Value_Type,
          class Compare = std::less<Key_Type>,
-         class Compare_child = std::less<Value_Type>
+         class Compare_child = std::less<addType>
          >
 class FileManager
 {
@@ -247,7 +247,7 @@ public:
         if(head_off == -1) return false;
 
         if(head_off == 0)
-            get_block(start, ret);
+            get_block(tree_utility_byte, ret);
         else
             get_block(head_off, ret);
         return true;
@@ -319,13 +319,9 @@ public:
             return ans;
         }
         Node now;
-
-
-
         get_block(head_off, now);
         while(true)
         {
-
             if( Cmp( now.keys[now.keys.size()-1] ,K) ){
                     if(now.next != -1)
                     get_block(now.next, now);
@@ -358,13 +354,11 @@ public:
         }
         return ans;
 
-
     }
 
 
     void traverse()
     {
-
         if(head_off == -1)
         {
             std::cout<<"empty!\n";
@@ -373,17 +367,20 @@ public:
         std::cout<<root_off<<"root_off\n";
         Node now;
         get_block(head_off, now);
+        int ans = 0;
 
         while(true)
         {
-            for(int i = 0; i < now.keys.size(); ++i)
-            {}
+            for(int i = 0; i < now.keys.size(); ++i){
+                ans++;
+            }
+                //std::cout << now.keys[i] << ' ' << now.vals[i] << std::endl;
 
             if(now.next == -1)
                 break;
             get_block(now.next, now);
-
         }
+        std::cout<<ans;
     }
 };
 
