@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cmath>
 #include <cstdlib>
+#include <cassert>
 #include "utility.hpp"
 #include "user.hpp"
 #include "train.hpp"
@@ -22,8 +23,6 @@
 typedef sjtu::string string;
 typedef sjtu::train train;
 typedef sjtu::ticket ticket;
-//typedef sjtu::vector <train> trainSet;
-//typedef sjtu::vector <ticket> ticketSet; //TODO: ticketSet: orderId or ticket ??
 typedef sjtu::user user;
 typedef sjtu::time Time;
 typedef sjtu::Station Station;
@@ -49,14 +48,13 @@ const int CAPACITY = sjtu::TRAIN_CAPACITY;
     orderIdTicket   < OrderId, ticket >
     station         <stationId, Station>
     priceName       <trainId, priceName>
-
  */
 
 sjtu::BPlusTree <int, user> idUser("user");
 sjtu::BPlusTree <string, train> sale("sale");
 sjtu::BPlusTree <string, train> nSale("nSale");
-sjtu::BPlusTree <string, train> locTrain("locTrain");
-sjtu::BPlusTree <sjtu::tuple3<string, string, char>, train> direct("direct");
+sjtu::BPlusTree <string, string> locTrain("locTrain");
+sjtu::BPlusTree <sjtu::tuple3<string, string, char>, string> direct("direct");
 sjtu::BPlusTree <sjtu::tuple3<string, string, string>, int> trKindTicket("trKindTicket");
 sjtu::BPlusTree <sjtu::pair<string, string>, int> trDate("trDate");
 sjtu::BPlusTree <sjtu::tuple3<int, string, char>, int> idTicket("idTicket");
@@ -142,7 +140,6 @@ namespace arya {
 
     int Register(user &u) {
         int id = ++idCnt;
-        lastId.modify("id", idCnt);
         u.id = id;
         if (id == 2018)
             u.priv = 2;
@@ -234,17 +231,13 @@ namespace arya {
     bool queryTicket(string const &loc1, string const &loc2, string const &date, string const &catalog) {
         int len = catalog.length(), tot = 0;
         trainInfo q[sjtu::MAX_DIRECT];
-
-
-        direct.bm.traverse();
+//        direct.bm.traverse();
 
         for (int i = 0; i < len; ++i) {
             char cat = catalog[i];
             auto allTrain = direct.find_muti(sjtu::tuple3<string, string, char>(loc1, loc2, cat));
-            if(allTrain.size() == 0)
-                assert(!direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).first);//TODO
             for (int j = 0; j < allTrain.size(); ++j) {
-                train tr = allTrain[j];
+                train tr = sale.find(allTrain[j]).second;
                 sjtu::vector<int> ret;
                 if (excludeTicket(tr, loc1, loc2, date, ret)) {
                     q[++tot] = trainInfo(tr, ret);
@@ -296,7 +289,7 @@ namespace arya {
         if (!trainS.size())
             return false;
         for(int it = 0; it < trainS.size(); ++it) {
-            auto tr1 = trainS[it];
+            auto tr1 = sale.find(trainS[it]).second;
             for(int i = tr1.stationNum - 1; i >= 0; --i) {
                 auto loc0 = stationName(tr1, i);
                 if (loc0 == loc1)
@@ -308,7 +301,7 @@ namespace arya {
                         auto trainS2 = direct.find_muti(sjtu::tuple3<string, string, char>(loc0, loc2, cat));
                         {
                             for (int j = 0; j < trainS2.size(); ++j) {
-                                auto tr2 = trainS2[j];
+                                auto tr2 = sale.find(trainS2[j]).second;
                                 if (excludeTicket(tr2, loc0, loc2, date, ret2)) {
                                     auto now = Result(calTime(tr1, tr2, loc1, loc0, loc2), loc1, loc0, loc2,
                                                       trainInfo(tr1, ret1), trainInfo(tr2, ret2));
@@ -345,7 +338,6 @@ namespace arya {
         if (!tmp.first) {
             //create a new order
             int cnt = ++orderCnt;
-            lastId.modify("order", orderCnt);
             ticket newTic(id, cnt, num, trainId, loc1, loc2, date, kind, catalog);
             infoOrderId.insert(key, cnt);
             orderIdTicket.insert(cnt, newTic);
@@ -498,8 +490,11 @@ namespace arya {
 
     bool saleTrain(string const &id) {
         auto tmp0 = nSale.find(id);
-        if (!tmp0.first)
+        /*if (!tmp0.first) {
+            std::cout << id << std::endl;
+            assert(0);
             return false;
+        }*/
         auto tr = tmp0.second;
         nSale.erase(id);
         sale.insert(id, tr);
@@ -512,11 +507,11 @@ namespace arya {
         for (int i = 0; i < tr.stationNum; ++i) {
             for (int j = i + 1; j < tr.stationNum; ++j) {
                 auto key = sjtu::tuple3<string, string, char>(loc[i], loc[j], cat);
-                direct.insert(key, tr);
+                direct.insert(key, id);
             }
         }
         for (int i = 0; i < tr.stationNum; ++i) {
-            locTrain.insert(loc[i], tr);
+            locTrain.insert(loc[i], id);
         }
         return true;
     }

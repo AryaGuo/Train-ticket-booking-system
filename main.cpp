@@ -210,6 +210,10 @@ void init()
 
 void close()
 {
+    lastId.modify("id", idCnt);
+    lastId.modify("order", orderCnt);
+    lastId.modify("station", stationCnt);
+
     idUser.close_file();
     sale.close_file();
     nSale.close_file();
@@ -229,7 +233,7 @@ int main()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
-    freopen("4.in", "r", stdin);
+//    freopen("-1.in", "r", stdin);
 //    freopen("test.out", "w", stdout);
 
     const int funcNum = 17;
