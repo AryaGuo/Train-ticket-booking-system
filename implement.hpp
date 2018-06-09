@@ -16,7 +16,6 @@
 #include "ticket.hpp"
 #include "BPlusTree.h"
 #include "tuple.hpp"
-#include "queue.hpp"
 #include "constant.h"
 #include "vector.h"
 
@@ -231,17 +230,17 @@ namespace arya {
     bool queryTicket(string const &loc1, string const &loc2, string const &date, string const &catalog) {
         int len = catalog.length(), tot = 0;
         trainInfo q[sjtu::MAX_DIRECT];
-//        direct.bm.traverse();
 
         for (int i = 0; i < len; ++i) {
             char cat = catalog[i];
             auto allTrain = direct.find_muti(sjtu::tuple3<string, string, char>(loc1, loc2, cat));
+//            if(allTrain.size() == 0)
+//                assert(!direct.find(sjtu::tuple3<string, string, char>(loc1, loc2, cat)).first);
             for (int j = 0; j < allTrain.size(); ++j) {
                 train tr = sale.find(allTrain[j]).second;
                 sjtu::vector<int> ret;
                 if (excludeTicket(tr, loc1, loc2, date, ret)) {
                     q[++tot] = trainInfo(tr, ret);
-                    assert(tot < sjtu::MAX_DIRECT);//TODO
                 }
             }
         }
@@ -489,12 +488,15 @@ namespace arya {
     }
 
     bool saleTrain(string const &id) {
+        if(id == "85000C852103") {
+            int cnt = 0;
+            cnt++;
+        }
+
         auto tmp0 = nSale.find(id);
-        /*if (!tmp0.first) {
-            std::cout << id << std::endl;
-            assert(0);
+        if (!tmp0.first) {
             return false;
-        }*/
+        }
         auto tr = tmp0.second;
         nSale.erase(id);
         sale.insert(id, tr);

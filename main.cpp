@@ -12,7 +12,6 @@
 #include "ticket.hpp"
 #include "BPlusTree.h"
 #include "tuple.hpp"
-#include "queue.hpp"
 #include "constant.h"
 #include "implement.hpp"
 using namespace arya;
@@ -233,7 +232,7 @@ int main()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
-//    freopen("-1.in", "r", stdin);
+    freopen("-2.in", "r", stdin);
 //    freopen("test.out", "w", stdout);
 
     const int funcNum = 17;

@@ -143,11 +143,14 @@ namespace sjtu {
 
         int search_sup_muti(Key_Type K) {
             int pos = 0;
-                while (pos < keys.size() && Cmp(K,keys[pos])) pos++;
-
-                if (pos == keys.size()) return -1;
-                else if(pos == 0) return 0;
-                else return pos - 1;
+                while (pos < keys.size() && Cmp(keys[pos], K)) pos++;
+                if(pos == keys.size()) {
+                    if(Cmp(keys[pos - 1], K))
+                        return pos;
+                    else
+                        return pos - 1;
+                }
+                else return pos;
 
         }
 

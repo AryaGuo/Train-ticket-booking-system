@@ -536,7 +536,7 @@ public:
 
         //    leaf_degree = branch_degree = 20;
 
-        std::cout<<"degree "<<leaf_degree<<' '<<branch_degree<<'\n';
+//        std::cout<<"degree "<<leaf_degree<<' '<<branch_degree<<'\n';
 
     }
 
@@ -577,19 +577,25 @@ public:
     {
         sjtu::vector<Value_Type> ans;
         Node &now = pool[cnt++];
-        Node &pre = pool[cnt++];
         search_to_leaf_muti(K, now);
         int i = now.search_exact(K);
         cnt--;
-
         if (i == -1)
             {
-                while(true)
+                /*while(true)
                 {
                     bm.get_block(now.next,now);
                     i = now.search_exact(K);
                     if(i != -1) break;
-                }
+                    if(now.next == -1)
+                        return ans;
+                }*/
+                if(now.next == -1)
+                    return ans;
+                bm.get_block(now.next,now);
+                i = now.search_exact(K);
+                if(i == -1)
+                    return ans;
             }
                 i--;
                 while(1)
@@ -836,7 +842,7 @@ public:
 
                 if(root.childs.size() == 1)   /**   减小树高*/
                 {
-                    std::cout<<"sub height\n";
+//                    std::cout<<"sub height\n";
                     bm.root_off = root.childs[0];
                 }
                 else if(ret_info.modified)

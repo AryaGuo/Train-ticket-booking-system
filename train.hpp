@@ -60,7 +60,7 @@ namespace sjtu {
     {
         os << obj.name << ' ' << obj.arrive << ' ' << obj.Start << ' ' << obj.stopover;
         for(int i = 0; i < obj.len; ++i) {
-            os << " ¥" << obj.price[i];
+            os << " ￥" << obj.price[i];
         }
         return os;
     }
