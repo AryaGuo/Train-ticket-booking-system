@@ -154,6 +154,7 @@ private:
                     {
 
                         l_node->next = r_node->next;
+                        r_node->next = l_node->address;
                         if (bm.tail_off == r_node->address)
                             bm.tail_off = l_node->address;
 
@@ -412,13 +413,15 @@ private:
                     Node &newLeaf = pool[cnt++];
                     bm.append_block(newLeaf, true);
 
-                    newLeaf.next = ch.next;
-                    ch.next = newLeaf.address;
-                    newLeaf.next  = -1;
+
+//                    newLeaf.next  = -1;
                     if (bm.tail_off == ch.address)
                         bm.tail_off = newLeaf.address;
 
                     split_leaf(ch, newLeaf);
+
+                    newLeaf.next = ch.next;
+                    ch.next = newLeaf.address;
                     cur.childs.insert(ch_pos + 1, newLeaf.address);
                     cur.keys.insert(ch_pos, newLeaf.keys[0]);
 
@@ -494,7 +497,7 @@ public:
         K_byte = sizeof(Key_Type), V_byte = sizeof(Value_Type);
         cnt = 0;
 
-        leaf_degree = (BlockSize - node_utility_byte) / (K_byte + V_byte);
+        leaf_degree = (BlockSize - node_utility_byte - 10) / (K_byte + V_byte);
         branch_degree = (BlockSize - node_utility_byte) / (sizeof(addType) + K_byte);
 
         //    leaf_degree = branch_degree = 20;
@@ -538,7 +541,7 @@ public:
 
     sjtu::vector<Value_Type> find_muti(const Key_Type &K)
     {
-        sjtu::vector<Value_Type>   ans= bm.traverse_nuti(K);
+        sjtu::vector<Value_Type>   ans= bm.traverse_muti(K);
 
         return ans;
     }
