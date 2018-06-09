@@ -125,10 +125,9 @@ private:
                     {
                         bm.get_block(cur.childs[ch_pos + sbl_off], sbl);
                         sbl_pos = ch_pos + sbl_off;
-                        //sbl_off *= -1;
                     }
 
-                    //key_pos = std::min(ch_pos, sbl_pos);
+
                     if(ch_pos < sbl_pos)
                     {
                         key_pos = ch_pos;
@@ -235,6 +234,7 @@ private:
                     int key_pos;
                     Key_Type K_bt;
                     Node *l_node, *r_node;
+
                     if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
@@ -579,7 +579,11 @@ public:
         int i = now.search_exact(K);
         cnt--;
         if (i == -1)
-            return ans;
+            {
+                bm.get_block(now.next,now);
+                i = now.search_exact(K);
+                if(i == -1) return ans;
+            }
         else
             {
                 i--;
