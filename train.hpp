@@ -8,21 +8,6 @@
 #include "utility.hpp"
 #include <iostream>
 
-/*
-     *  add_train *train_id* *name* *catalog* *num(station)* *num(price)* *(name(price) ) x
-     num(price)*
-     *[name time(arriv) time(startTime) time(stopover) (price) x num(price) ] x num(station)*
-    返回值
-    1 or 0
-    说明
-    添加车号为train_id，名为name的车，该车经过num(station)站(<=60)，共有num(price)种票价(<=5)， 并在之后一一列出是哪种票。
-                     接下来的num(station)行给出各个车站相关信息。 注意刚刚新建的车次中所售车票 query_ticket
-    能被查询或购买。 样例
-    add_train abc123456 G123456 G 2 1 商务座 北京 xx:xx 08:00 00:00 ¥0.0
-    夏威夷 08:01 xx:xx 00:00 ¥1.5
-    ->; 1
-     */
-
 namespace sjtu {
     class Station {
         friend std::ostream &operator<<(std::ostream &os, const Station &obj);
@@ -55,7 +40,6 @@ namespace sjtu {
         }
     };
 
-    //TODO: check
     std::ostream &operator<<(std::ostream &os, const Station &obj)
     {
         os << obj.name << ' ' << obj.arrive << ' ' << obj.Start << ' ' << obj.stopover;

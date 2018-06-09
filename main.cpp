@@ -10,7 +10,7 @@
 #include "user.hpp"
 #include "train.hpp"
 #include "ticket.hpp"
-#include "BPlusTree.h"
+#include "BPlusTree.hpp"
 #include "tuple.hpp"
 #include "constant.h"
 #include "implement.hpp"
@@ -234,7 +234,6 @@ int main()
     std::cin.tie(nullptr);
 //    freopen("-2.in", "r", stdin);
 //    freopen("test.out", "w", stdout);
-
     const int funcNum = 17;
     string comm;
     string opt[funcNum];
@@ -258,12 +257,8 @@ int main()
     void (*func[funcNum])() = {Register, queryProfile, modifyProfile, modifyPrivilege, queryTicket, queryTransfer, buyTicket,
                           queryOrder, refundTicket, addTrain, saleTrain, queryTrain, deleteTrain, modifyTrain, clean, login};
     init();
-//     clean();    //TODO
-    int tot = 0;
     while(true)
-//    while(tot <= 1000000)    //TODO
     {
-        tot++;
         bool flag = false;
         std::cin >> comm;
         if(comm == opt[16]) {
@@ -280,7 +275,6 @@ int main()
             std::cout << "WRONG COMMAND" << std::endl;
         }
     }
-//    clean(); //TODO
     close();
     return 0;
 }
