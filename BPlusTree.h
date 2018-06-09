@@ -116,7 +116,6 @@ private:
                     int key_pos;
                     Key_Type K_bt;
                     Node *l_node, *r_node;
-
                     if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
@@ -236,8 +235,6 @@ private:
                     int key_pos;
                     Key_Type K_bt;
                     Node *l_node, *r_node;
-
-
                     if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
@@ -491,6 +488,38 @@ private:
         }
     }
 
+
+
+    int find_child_muti(Node &cur, const Key_Type K)
+    {
+        int i = cur.search_sup_muti(K);
+
+        if (i == -1)
+        {
+            bm.get_block(cur.childs.back(), cur);
+            return cur.childs.size() - 1;
+        }
+        else
+        {
+            bm.get_block(cur.childs[i], cur);
+            return i;
+        }
+    }
+
+
+
+
+    void search_to_leaf_muti(Key_Type K, Node &ret)
+    {
+        bm.get_root(ret);
+
+        while (!ret.isLeaf)
+        {
+            find_child_muti(ret, K);
+        }
+    }
+
+
 public:
     explicit BPlusTree(const char *fname)
     {
@@ -544,9 +573,32 @@ public:
 
     sjtu::vector<Value_Type> find_muti(const Key_Type &K)
     {
-        sjtu::vector<Value_Type> ans= bm.traverse_muti(K);
+        sjtu::vector<Value_Type> ans;
+        Node &now = pool[cnt++];
+        search_to_leaf_muti(K, now);
+        int i = now.search_exact(K);
+        cnt--;
+        if (i == -1)
+            return ans;
+        else
+            {
+                i--;
+                while(1)
+                {
+                    i++;
+                    if(!Equal(now.keys[i], K)) break;
+                    ans.push_back(now.vals[i]);
+                    if(i == now.keys.size() - 1) {
+                            if(now.next == -1)
+                            {
+                                return ans;
+                            }
+                            bm.get_block(now.next,now); i = -1;
+                    }
+                }
 
-        return ans;
+            }
+            return ans;
     }
 
 
