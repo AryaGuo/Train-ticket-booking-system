@@ -69,7 +69,7 @@ private:
 
     retT erase_node(Node &cur, const Key_Type &K)
     {
-        static int sbl_off = 1;
+        int sbl_off = 1;
 
         if(cur.isLeaf)
         {
@@ -116,13 +116,11 @@ private:
                     int key_pos;
                     Key_Type K_bt;
                     Node *l_node, *r_node;
-
-                    if(ch_pos == 0)
-                    {
-                        bm.get_block(cur.childs[1], sbl);
-                        sbl_pos = 1;
-                    }
-                    else if(ch_pos == cur.childs.size()-1)
+                    if(cur.childs.size() == 1)
+                    {  // std::cout<<"too small\n";
+                       // system("pause");
+                            }
+                    if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
                         sbl_pos = cur.childs.size() - 2;
@@ -131,7 +129,7 @@ private:
                     {
                         bm.get_block(cur.childs[ch_pos + sbl_off], sbl);
                         sbl_pos = ch_pos + sbl_off;
-                        sbl_off *= -1;
+                        //sbl_off *= -1;
                     }
 
                     //key_pos = std::min(ch_pos, sbl_pos);
@@ -152,7 +150,7 @@ private:
 
                     if(ch.keys.size() + sbl.keys.size() <= leaf_degree)
                     {
-
+                       // std::cout<<"hebing leaf\n";
                         l_node->next = r_node->next;
                         if (bm.tail_off == r_node->address)
                             bm.tail_off = l_node->address;
@@ -167,7 +165,7 @@ private:
                         cur.childs.erase(key_pos + 1);
 
                         bm.write_block(*l_node);
-                        bm.write_block(*r_node);    /**     尽管这个右儿子没甚用      */
+                        //bm.write_block(*r_node);    /**     尽管这个右儿子没甚用      */
 
                         cnt -= 2;
                         return retT(true, true);
@@ -176,6 +174,7 @@ private:
                     {
                         if(sbl_pos < ch_pos)
                         {
+                            while(ch.keys.size() < (int) ceil(leaf_degree / 2.0)){
                             Key_Type key_shift = sbl.keys.back();
                             Value_Type val_shift = sbl.vals.back();
 
@@ -186,7 +185,7 @@ private:
                             ch.vals.insert(0, val_shift);
 
                             cur.keys[key_pos] = ch.keys[0];
-
+                            }
                             bm.write_block(ch);
                             bm.write_block(sbl);
 
@@ -197,6 +196,9 @@ private:
 
                         else
                         {
+                            while(ch.keys.size() < (int) ceil(leaf_degree / 2.0))
+                            {
+
 
                             Key_Type key_shift = sbl.keys.front();
                             Value_Type val_shift = sbl.vals.front();
@@ -208,7 +210,7 @@ private:
                             ch.vals.push_back(val_shift);
 
                             cur.keys[key_pos] = sbl.keys[0];
-
+                            }
                             bm.write_block(ch);
                             bm.write_block(sbl);
 
@@ -238,12 +240,12 @@ private:
                     Key_Type K_bt;
                     Node *l_node, *r_node;
 
-                    if(ch_pos == 0)
+                    if(cur.childs.size() == 1)
                     {
-                        bm.get_block(cur.childs[1], sbl);
-                        sbl_pos = 1;
+                       // std::cout<<"===1\n";
+                        //system("pause");
                     }
-                    else if(ch_pos == cur.childs.size()-1)
+                    if(ch_pos == cur.childs.size()-1)
                     {
                         bm.get_block(cur.childs[cur.childs.size()-2], sbl);
                         sbl_pos = cur.childs.size() - (int) 2;
@@ -252,25 +254,29 @@ private:
                     {
                         bm.get_block(cur.childs[ch_pos + sbl_off], sbl);
                         sbl_pos = ch_pos + sbl_off;
-                        sbl_off *= -1;
+                        //sbl_off *= -1;
                     }
 
-                    key_pos = std::min(ch_pos, sbl_pos);
-                    K_bt = cur.keys[key_pos];
-
-                    if(ch.childs.size() + sbl.keys.size() <= branch_degree)
-                    {
                         if(ch_pos < sbl_pos)
                         {
+                            key_pos = ch_pos;
                             l_node = &ch;
                             r_node = &sbl;
                         }
                         else
                         {
+                            key_pos = sbl_pos;
                             l_node = &sbl;
                             r_node = &ch;
                         }
 
+                    K_bt = cur.keys[key_pos];
+
+                    if(ch.childs.size() + sbl.keys.size() <= branch_degree)
+                    {
+
+                       // std::cout<<"hebing branch\n";
+                       // system("pause");
                         l_node->keys.push_back(K_bt);
                         for (int i = 0; i < r_node->keys.size(); ++i)
                             l_node->keys.push_back(r_node->keys[i]);
@@ -291,7 +297,7 @@ private:
                     {
                         if(sbl_pos < ch_pos)
                         {
-
+                            while(ch.childs.size() < (int) ceil(branch_degree / 2.0)){
                             Key_Type key_shift = sbl.keys.back();
                             addType child_shift = sbl.childs.back();
 
@@ -302,7 +308,7 @@ private:
                             ch.childs.insert(0, child_shift);
 
                             cur.keys[key_pos] = key_shift;
-
+                            }
                             bm.write_block(ch);
                             bm.write_block(sbl);
 
@@ -312,7 +318,7 @@ private:
 
                         else
                         {
-
+                            while(ch.childs.size() >= (int) ceil(branch_degree / 2.0)){
                             Key_Type key_shift = sbl.keys.front();
                             addType child_shift = sbl.childs.front();
 
@@ -323,7 +329,7 @@ private:
                             ch.childs.push_back(child_shift);
 
                             cur.keys[key_pos] = key_shift;
-
+                            }
                             bm.write_block(ch);
                             bm.write_block(sbl);
 
@@ -409,6 +415,7 @@ private:
 
                 else
                 {
+                    //std::cout<<"isleaf spilt_leaf\n";
                     //std::cout<<"                    .size()>leaf_degree\n";
                     Node &newLeaf = pool[cnt++];
                     bm.append_block(newLeaf, true);
@@ -443,6 +450,8 @@ private:
                 }
                 else
                 {
+                    //std::cout<<"spilt_branch\n";
+                   // system("pause");
                     Key_Type mid_key;
                     Node &newBranch = pool[cnt++];
                     bm.append_block(newBranch, false);
@@ -709,6 +718,7 @@ public:
                     Key_Type mid_key;
 
                     bm.append_block(newBranch, false);
+
                     mid_key = split_branch(root, newBranch);
 
                     bm.append_block(newRoot, false);
@@ -773,6 +783,7 @@ public:
 
                 if(root.childs.size() == 1)   /**   减小树高*/
                 {
+                    std::cout<<"sub height\n";
                     bm.root_off = root.childs[0];
                 }
                 else if(ret_info.modified)
