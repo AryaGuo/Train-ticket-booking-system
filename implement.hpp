@@ -96,28 +96,64 @@ namespace arya {
         return !(r <= s || l >= t);
     }
 
-    /*
-     * 2018-03-28 08:00
-     */
+    void nextDay(string &date) {
+        static int Days[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+        int year = (int)sjtu::stringToDouble(date.get(0, 3));
+        int month = (int)sjtu::stringToDouble(date.get(5, 6));
+        int day = (int)sjtu::stringToDouble(date.get(8, 9));
+        if(day == Days[month]) {
+            month++;
+            day = 1;
+            date[5] = (char)(month / 10 + '0');
+            date[6] = (char)(month % 10 + '0');
+            date[8] = '0';
+            date[9] = '1';
+        }
+        else {
+            day++;
+            date[8] = (char)(day / 10 + '0');
+            date[9] = (char)(day % 10 + '0');
+        }
+    }
+
     string getStartTime(train const &tr, string date, string const &loc) {
         string res(date);
-        res += ' ';
+        Station last;
+        bool flag = false;
         for(int i = 0; i < tr.stationNum; ++i) {
             Station st = getStation(tr, i);
-            if(st.getName() == loc)
-                return res += st.getStart().out();
+            if(i && st.getStart() < last.getStart())
+                flag = 1;
+            last = st;
+            if(st.getName() == loc) {
+                if(flag)
+                    nextDay(res);
+                res += ' ' ;
+                res += st.getStart().out();
+                return res;
+            }
         }
         throw sjtu::invalid_operation();
     }
 
     string getArriveTime(train const &tr, string date, string const &loc) {
         string res(date);
-        res += ' ';
+        Station last;
+        bool flag = false;
         for(int i = 0; i < tr.stationNum; ++i) {
             Station st = getStation(tr, i);
-            if(st.getName() == loc)
-                return res += st.getArrive().out();
+            if(i && st.getStart() < last.getStart())
+                flag = 1;
+            last = st;
+            if(st.getName() == loc) {
+                if(flag)
+                    nextDay(res);
+                res += ' ' ;
+                res += st.getArrive().out();
+                return res;
+            }
         }
+        throw sjtu::invalid_operation();
     }
 
     double getPrice(train const &tr, string const &loc1, string const &loc2, int const &priceId) {
@@ -377,6 +413,15 @@ namespace arya {
         if (!res.first)
             return false;
         train tr = res.second;
+        auto pn = priceName.find(tr.id).second;
+        bool flag = false;
+        for(int i = 0; i < tr.priceNum; ++i)
+            if(pn[i] == kind) {
+                flag = true;
+                break;
+            }
+        if(!flag)
+            return false;
         auto tickets = trKindTicket.find_muti(sjtu::tuple3<string, string, string>(trainId, date, kind));
         for(int i = 0; i < tickets.size(); ++i) {
             auto ticket = getTicket(tickets[i]);
@@ -488,11 +533,6 @@ namespace arya {
     }
 
     bool saleTrain(string const &id) {
-        if(id == "85000C852103") {
-            int cnt = 0;
-            cnt++;
-        }
-
         auto tmp0 = nSale.find(id);
         if (!tmp0.first) {
             return false;

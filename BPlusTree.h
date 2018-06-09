@@ -576,9 +576,12 @@ public:
     sjtu::vector<Value_Type> find_muti(const Key_Type &K)
     {
         sjtu::vector<Value_Type> ans;
+        if(!find(K).first)
+            return ans;
         Node &now = pool[cnt++];
         search_to_leaf_muti(K, now);
         int i = now.search_exact(K);
+//        int i = now.search_sup_muti(K);
         cnt--;
         if (i == -1)
             {
@@ -596,6 +599,7 @@ public:
                 i = now.search_exact(K);
                 if(i == -1)
                     return ans;
+
             }
                 i--;
                 while(1)

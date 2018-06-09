@@ -17,14 +17,14 @@ erase(Key\_Type): bool
 idUser      < id, user >
 
 sale        < trainId, train >
-    
+
 nSale       < trainId, train >
 
 locTrain    < loc, trainSet >
 
 direct      < {loc1, loc2, catalog}, trainSet >
 
-transfer    < {loc1, loc2, catalog}, {time, train1, train2} >
+transfer    < {loc1, loc2, catalog}, {time, train1, train2, loc0, loc1, loc2} >
 
 trKindTicket    < {trainId, date, kind}, ticketSet >
 
@@ -35,6 +35,8 @@ idTicket        < {id, date, catalog}, ticketSet >
 infoOrderId     < {id, trainId, loc1, loc2, date, kind}, OrderId >
 
 orderIdTicket   < OrderId, ticket >
+
+station         <{trainNum, loc}, Station>
 - - - -
 # register
 	if 写入用户信息成功

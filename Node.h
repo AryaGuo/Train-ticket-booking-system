@@ -111,17 +111,17 @@ namespace sjtu {
 
 
 
-
         /**找确切key[i] = K */
         int search_exact(const Key_Type &K) {
-            if(keys.size() < min_cmp) {
+//            if(keys.size() < min_cmp)
+            {
                 int pos = 0;
                 while (pos < keys.size() && !Equal(K,keys[pos]) ) ++pos;
 
                 if (pos == keys.size()) return -1;
                 else return pos;
             }
-            else {
+           /* else {
                 int low = 0, high = keys.size() - 1;
                 int mid;
                 while(high - low >= min_cmp) {
@@ -137,20 +137,14 @@ namespace sjtu {
 
                 if (low == keys.size()) return -1;
                 else return low;
-            }
+            }*/
         }
 
 
         int search_sup_muti(Key_Type K) {
             int pos = 0;
-                while (pos < keys.size() && Cmp(keys[pos], K)) pos++;
-                if(pos == keys.size()) {
-                    if(Cmp(keys[pos - 1], K))
-                        return pos;
-                    else
-                        return pos - 1;
-                }
-                else return pos;
+            while (pos < keys.size() && Cmp(keys[pos], K)) pos++;
+            return pos;
 
         }
 

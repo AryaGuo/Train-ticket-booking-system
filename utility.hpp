@@ -225,6 +225,14 @@ namespace sjtu {
             return hour < other.hour || (hour == other.hour && mini < other.mini);
         }
 
+        bool operator==(const time &other) const {
+            return hour == other.hour && mini == other.mini;
+        }
+
+        bool operator<= (const time &other) const{
+            this->operator==(other) || this->operator<(other);
+        }
+
         time operator+ (const time &other) const{
             time res(*this);
             res += other;
