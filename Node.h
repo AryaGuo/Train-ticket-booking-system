@@ -15,14 +15,14 @@ namespace sjtu {
         class TreeNode {
         public:
         addType address;          // 文件中地址
+        bool isLeaf;
 
-        sjtu::vector<addType> childs;
         sjtu::vector<Key_Type> keys;
         sjtu::vector<Value_Type> vals;
-
+        sjtu::vector<addType> childs;
         addType next;
 
-        bool isLeaf;
+
 
 
         bool Cmp(const Key_Type &x, const Key_Type &y) const{       ///<
@@ -84,7 +84,7 @@ namespace sjtu {
         /**找最小的i使得 key[i] > K，没有则返回-1;*/
         int search_sup(Key_Type K) {
             int pos = 0;
-            if(keys.size() < 10) {
+            if(keys.size() < 20) {
                 while (pos < keys.size() && !Cmp(K,keys[pos])) pos++;
 
                 if (pos == keys.size()) return -1;
@@ -93,7 +93,7 @@ namespace sjtu {
             else {
                 int low = 0, high = keys.size() - 1;
                 int mid;
-                while(high - low >= 10) {
+                while(high - low >= 20) {
                     mid = (low + high) / 2;
                     if(!Cmp(K,keys[mid]))
                         low = mid;
@@ -107,9 +107,13 @@ namespace sjtu {
             }
         }
 
+
+
+
+
         /**找确切key[i] = K */
         int search_exact(const Key_Type &K) {
-            if(keys.size() < 10) {
+            if(keys.size() < 20) {
                 int pos = 0;
                 while (pos < keys.size() && !Equal(K,keys[pos]) ) ++pos;
 
@@ -119,7 +123,7 @@ namespace sjtu {
             else {
                 int low = 0, high = keys.size() - 1;
                 int mid;
-                while(high - low >= 10) {
+                while(high - low >= 20) {
                     mid = (low + high) / 2;
                     if( Equal(K,keys[mid]) )
                         return mid;
@@ -133,6 +137,16 @@ namespace sjtu {
                 if (low == keys.size()) return -1;
                 else return low;
             }
+        }
+
+
+        int search_sup_muti(Key_Type K) {
+            int pos = 0;
+                while (pos < keys.size() && Cmp(keys[pos],K)) pos++;
+
+                if (pos == keys.size()) return -1;
+                else return pos;
+
         }
 
         /**   清空node      */
@@ -153,7 +167,7 @@ namespace sjtu {
 
         /**   找块中孩子，失败返回-1      */
         int search_child(addType child) {
-            if(childs.size() < 10) {
+            if(childs.size() < 20) {
                 int i = 0;
                 while (i < childs.size() && childs[i]!= child) ++i;
                 if (i == childs.size()) {
@@ -164,7 +178,7 @@ namespace sjtu {
             else {
                 int low = 0, high = childs.size() - 1;
                 int mid;
-                while(high - low >= 10) {
+                while(high - low >= 20) {
                     mid = (low + high) / 2;
                     if(childs[mid]==child)
                         return mid;
