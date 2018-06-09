@@ -232,7 +232,7 @@ int main()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
-    freopen("-2.in", "r", stdin);
+//    freopen("-2.in", "r", stdin);
 //    freopen("test.out", "w", stdout);
 
     const int funcNum = 17;
@@ -260,8 +260,8 @@ int main()
     init();
 //     clean();    //TODO
     int tot = 0;
-//    while(true)
-    while(tot <= 1000000)    //TODO
+    while(true)
+//    while(tot <= 1000000)    //TODO
     {
         tot++;
         bool flag = false;
