@@ -490,7 +490,7 @@ private:
 
 
 
-    int find_child_muti(Node &cur, Node &pre, const Key_Type K)
+    int find_child_muti(Node &cur, const Key_Type K)
     {
 
         int i = cur.search_sup_muti(K);
@@ -504,7 +504,6 @@ private:
         else
         {
             bm.get_block(cur.childs[i], cur);
-            bm.get_block(cur.childs[i] - 1,pre);
             return i;
         }
     }
@@ -512,13 +511,13 @@ private:
 
 
 
-    void search_to_leaf_muti(Key_Type K, Node &ret, Node &pre)
+    void search_to_leaf_muti(Key_Type K, Node &ret)
     {
         bm.get_root(ret);
 
         while (!ret.isLeaf)
         {
-            find_child_muti(ret, pre, K);
+            find_child_muti(ret, K);
         }
     }
 
@@ -579,22 +578,19 @@ public:
         sjtu::vector<Value_Type> ans;
         Node &now = pool[cnt++];
         Node &pre = pool[cnt++];
-        search_to_leaf_muti(K, now, pre);
+        search_to_leaf_muti(K, now);
         int i = now.search_exact(K);
-        int j = pre.search_exact(K);
-        cnt-=2;
-        if(i == 0 && j != -1)
-        {
-            i = j;
-        }
-        else if (i == -1)
+        cnt--;
+
+        if (i == -1)
             {
-                bm.get_block(now.next,now);
-                i = now.search_exact(K);
-                if(i == -1) return ans;
+                while(true)
+                {
+                    bm.get_block(now.next,now);
+                    i = now.search_exact(K);
+                    if(i != -1) break;
+                }
             }
-        else
-            {
                 i--;
                 while(1)
                 {
@@ -610,7 +606,6 @@ public:
                     }
                 }
 
-            }
             return ans;
     }
 
