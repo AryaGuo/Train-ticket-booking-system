@@ -1,4 +1,4 @@
-;#ifndef TREENODE_H
+#ifndef TREENODE_H
 #define TREENODE_H
 
 #include "vector.hpp"
@@ -17,10 +17,11 @@ namespace sjtu {
     public:
         addType address;          // 文件中地址
         bool isLeaf;
-        addType next;
+
         sjtu::vector<Key_Type> keys;
         sjtu::vector<Value_Type> vals;
         sjtu::vector<addType> childs;
+        addType next;
 
         bool Cmp(const Key_Type &x, const Key_Type &y) const {       ///<
             static Compare _cmp;
@@ -86,7 +87,7 @@ namespace sjtu {
                 int low = 0, high = keys.size() - 1;
                 int mid;
                 while (high - low >= min_cmp) {
-                    mid = (low + high ) / 2;
+                    mid = (low + high) / 2;
                     if (!Cmp(K, keys[mid]))
                         low = mid;
                     else
