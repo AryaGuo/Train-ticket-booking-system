@@ -54,54 +54,12 @@ namespace sjtu {
         char filename[50];
         int branch_degree, leaf_degree;
         int K_byte, V_byte; /**     size of   key_byte, value_byte            */
-        Node pool[50];
-        Node p[101];
+        Node pool[20];
     public:
-        int cnt;
-        int cnt2;            /**    记录pool的num     */
+        int cnt;    /**    记录pool的num     */
         FileManager<Key_Type, Value_Type> bm;
 
     private:
-
-
-            void getblock(addType address,Node &cur)
-            {
-            int pos;
-            for(pos = 0 ;pos < cnt2; pos++)
-            {
-                if(p[pos].address == address)
-                {
-                    if(pos != 0)
-                    {
-                        p[100] = p[pos - 1];
-                        p[pos - 1] = p[pos];
-                        p[pos] = p[100];
-                        cur = p[pos - 1];
-                    }
-                    else cur = p[0];
-                }
-            }
-            if(pos == cnt2)
-            {
-                if(cnt2 <= 100)
-                {
-                    cur = pool[cnt2++];
-
-                    bm.get_block(address,cur);
-                }
-                else
-                {
-                    bm.write_block(pool[99]);
-                    cur = pool[99];
-                    bm.get_block(address,cur);
-                }
-            }
-
-
-
-        }
-
-
 
 
         retT erase_node(Node &cur, const Key_Type &K) {
@@ -141,8 +99,12 @@ namespace sjtu {
                         Node *l_node, *r_node;
                         if (ch_pos == cur.childs.size() - 1) {
                             bm.get_block(cur.childs[cur.childs.size() - 2], sbl);
+                           // getblock(cur.childs[cur.childs.size() - 2], sbl);
+
+
                             sbl_pos = cur.childs.size() - 2;
                         } else {
+                            //getblock(cur.childs[ch_pos + sbl_off], sbl);
                             bm.get_block(cur.childs[ch_pos + sbl_off], sbl);
                             sbl_pos = ch_pos + sbl_off;
                         }
@@ -224,9 +186,11 @@ namespace sjtu {
                         Node *l_node, *r_node;
 
                         if (ch_pos == cur.childs.size() - 1) {
+                           // getblock(cur.childs[cur.childs.size() - 2], sbl);
                             bm.get_block(cur.childs[cur.childs.size() - 2], sbl);
                             sbl_pos = cur.childs.size() - (int) 2;
                         } else {
+                            //getblock(cur.childs[ch_pos + sbl_off], sbl);
                             bm.get_block(cur.childs[ch_pos + sbl_off], sbl);
                             sbl_pos = ch_pos + sbl_off;
                         }
@@ -378,15 +342,18 @@ namespace sjtu {
         int find_child(Node &cur, const Key_Type K, Node &child) {
             int i = cur.search_sup(K);
             if (i == -1) {
+               // getblock(cur.childs.back(), child);
                 bm.get_block(cur.childs.back(), child);
                 return cur.childs.size() - 1;
             } else {
+                //getblock(cur.childs[i], child);
                 bm.get_block(cur.childs[i], child);
                 return i;
             }
         }
 
         void search_to_leaf(Key_Type K, Node &ret) {
+            //getblock(bm.root_off,ret);
             bm.get_root(ret);
 
             while (!ret.isLeaf) {
@@ -396,6 +363,7 @@ namespace sjtu {
 
         int find_child_multi(Node &cur, const Key_Type K) {
             int i = cur.search_sup_multi(K);
+            //getblock(cur.childs[i], cur);
             bm.get_block(cur.childs[i], cur);
             return i;
         }
@@ -457,6 +425,7 @@ namespace sjtu {
             if (i == -1) {
                 if (now.next == -1)
                     return ans;
+                //getblock(now.next,now);
                 bm.get_block(now.next, now);
                 i = now.search_exact(K);
                 if (i == -1)
@@ -472,6 +441,7 @@ namespace sjtu {
                     if (now.next == -1) {
                         return ans;
                     }
+                   // getblock(now.next,now);
                     bm.get_block(now.next, now);
                     i = -1;
                 }
