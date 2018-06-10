@@ -1,13 +1,12 @@
 #ifndef FILEMANAGER_H
 #define FILEMANAGER_H
 
-#include <queue>
 #include <cstring>
 #include "BPlusTree.hpp"
 #include "constant.h"
 #include "Node.hpp"
 #include "utility.hpp"
-
+#include "string.h"
 
 #define start 4096
 
@@ -57,12 +56,9 @@ namespace sjtu {
         };
 
         struct two{
-            bool isLeaf;
-            addType next;
-            short key;
-            short value;
-            short child;
+            char mem[4096] = {'a'};
         };
+        //two a;
 
 
 
@@ -71,9 +67,9 @@ namespace sjtu {
             file = fopen(filename, "wb");
             root_off = head_off = tail_off = -1;
             append_off = start;
-            one a;
+            one b;
 
-            fwrite(&a,sizeof(one),1,file);
+            fwrite(&b,sizeof(one),1,file);
             fclose(file);
         }
 
@@ -84,12 +80,12 @@ namespace sjtu {
                 file = fopen(filename, "r+b");
             } else {
                 file = fopen(filename, "r+b");
-                one a;
-                fread(&a,sizeof(one),1,file);
-                head_off = a.head_off;
-                tail_off = a.tail_off;
-                root_off = a.root_off;
-                append_off = a.append_off;
+                one b;
+                fread(&b,sizeof(one),1,file);
+                head_off = b.head_off;
+                tail_off = b.tail_off;
+                root_off = b.root_off;
+                append_off = b.append_off;
 
             }
         }
@@ -118,6 +114,7 @@ namespace sjtu {
         }
 
         bool open_file() {
+
             if (isOpened) {
                 return false;
             } else {
@@ -133,12 +130,12 @@ namespace sjtu {
                 return false;
             } else {
                 fseek(file, 0, SEEK_SET);
-                one a;
-                a.head_off = head_off;
-                a.root_off = root_off;
-                a.tail_off = tail_off;
-                a.append_off = append_off;
-                fwrite(&a,sizeof(one),1,file);
+                one b;
+                b.head_off = head_off;
+                b.root_off = root_off;
+                b.tail_off = tail_off;
+                b.append_off = append_off;
+                fwrite(&b,sizeof(one),1,file);
 
 
                 fclose(file);
@@ -160,8 +157,8 @@ namespace sjtu {
                 fclose(file);
                 file = fopen(filename, "wb+");
                 fseek(file, 0, SEEK_SET);
-                one a;
-                fwrite(&a,sizeof(one),1,file);
+                one b;
+                fwrite(&b,sizeof(one),1,file);
                 return true;
             }
         }
@@ -173,20 +170,55 @@ namespace sjtu {
         void get_block(addType offset, Node &ret) {
             ret.address = offset;
             two a;
-
+            int pos = 0;
             fseek(file, offset, SEEK_SET);
             fread(&a, sizeof(two), 1, file);
-            ret.isLeaf = a.isLeaf;
-            ret.next = a.next;
-            short K_size = a.key;
-            short V_size = a.value;
-            short Ch_size = a.child;
+
+            short K_size ,V_size, Ch_size;
 
 
-            ret.keys.read_file(file, K_size);
-            ret.vals.read_file(file, V_size);
-            ret.childs.read_file(file, Ch_size);
+            memcpy(&ret.isLeaf, a.mem +pos*sizeof(char),1);
+            pos+=1;
+            memcpy(&ret.next, a.mem + pos*sizeof(char), 4);
+            pos+=4;
+            memcpy(&K_size, a.mem + pos*sizeof(char), 2);
+            pos+=2;
+            memcpy(&V_size, a.mem + pos*sizeof(char), 2);
+            pos+=2;
+            memcpy(&Ch_size, a.mem + pos*sizeof(char), 2);
+            pos+=2;
 
+            ret.keys.shorten_len(0);
+            ret.vals.shorten_len(0);
+            ret.childs.shorten_len(0);
+            for(int i = 0; i  <  K_size; ++i)
+            {
+                Key_Type x;
+                memcpy(&x, a.mem + pos*sizeof(char),  sizeof(Key_Type));
+                pos+= sizeof(Key_Type);
+                ret.keys.push_back(x);
+            }
+
+            for(int i = 0; i  <  V_size; ++i)
+            {
+                Value_Type x;
+                memcpy(&x, a.mem + pos*sizeof(char),  sizeof(Value_Type));
+                pos+= sizeof(Value_Type);
+                ret.vals.push_back(x);
+            }
+            for(int i = 0; i  <  Ch_size; ++i)
+            {
+                addType x;
+                memcpy(&x, a.mem + pos*sizeof(char),  sizeof(addType));
+                pos+= sizeof(addType);
+                ret.childs.push_back(x);
+            }
+            if(pos > 4096) {std::cout<<"wrong! "<<pos<<'\n';
+            std::cout<<"? "<<sizeof(Key_Type) <<' '<<K_size<<'\n';
+            std::cout<<"? "<<sizeof(Value_Type) <<' '<<V_size<<'\n';
+            std::cout<<"? "<<sizeof(addType) <<' '<<Ch_size<<'\n';
+
+            system("pause");}
         }
 
         bool get_next_block(const Node &cur, Node &ret) {
@@ -223,7 +255,7 @@ namespace sjtu {
         }
 
         void append_block(Node &ret, bool isLeaf) {
-            //ret.clear();
+            ret.clear();
             ret.address = append_off;
             ret.isLeaf = isLeaf;
             append_off += BlockSize;
@@ -235,22 +267,48 @@ namespace sjtu {
 
 
         void write_block(Node &now) {
-            fseek(file,now.address,SEEK_SET);
+
             two a;
-            a.isLeaf = now.isLeaf;
-            a.next = now.next;
-            a.key = now.keys.size();
-            a.value = now.vals.size();
-            a.child = now.childs.size();
-            fwrite(&a, sizeof(two), 1, file);
-
-            now.keys.write_file(file);
-
-            now.vals.write_file(file);
-
-            now.childs.write_file(file);
+            fseek(file,now.address,SEEK_SET);
 
 
+            short K_size = now.keys.size();
+            short V_size = now.vals.size();
+            short Ch_size = now.childs.size();
+            int pos = 0;
+            memcpy(a.mem + pos, &now.isLeaf, sizeof(bool));
+            pos++;
+            memcpy(a.mem + pos, &now.next, 4);
+            pos+=4;
+            memcpy(a.mem + pos, &K_size, 2);
+            pos+=2;
+            memcpy(a.mem + pos, &V_size, 2);
+            pos+=2;
+            memcpy(a.mem + pos, &Ch_size, 2);
+            pos+=2;
+
+            for(int i = 0; i < now.keys.size(); i++)
+            {
+                Key_Type x = now.keys[i];
+                memcpy(a.mem + pos, &x, sizeof(Key_Type));
+                pos += sizeof(Key_Type);
+            }
+            for(int i = 0; i < now.vals.size(); i++)
+            {
+                Value_Type x = now.vals[i];
+                memcpy(a.mem + pos, &x, sizeof(Value_Type));
+                pos += sizeof(Value_Type);
+            }
+
+            for(int i = 0; i < now.childs.size(); i++)
+            {
+                addType x = now.childs[i];
+                memcpy(a.mem + pos, &x, sizeof(addType));
+                pos += sizeof(addType);
+            }
+           
+             fwrite(&a, sizeof(two), 1, file);
+          //  if(!rig) std::cout<<"wa!\n";
         }
 
         void set_root(addType offset) {
