@@ -150,6 +150,7 @@ namespace sjtu {
 
         void get_block(addType offset, Node &ret) {
             ret.address = offset;
+            fseek(file, offset, SEEK_SET);
             fread(&ret.isLeaf, sizeof(bool), 1, file);
             short K_size, V_size, Ch_size;
 
@@ -203,6 +204,7 @@ namespace sjtu {
         }
 
         void write_block(Node &now) {
+            fseek(file, now.address, SEEK_SET);
             fwrite(&now.isLeaf, sizeof(bool), 1, file);
             short write_in = now.keys.size();
             fwrite(&write_in, sizeof(short), 1, file);
