@@ -19,7 +19,7 @@
 #include "constant.h"
 #include "vector.hpp"
 
-typedef sjtu::string string;
+typedef _string::String<> string;
 typedef sjtu::train train;
 typedef sjtu::ticket ticket;
 typedef sjtu::user user;
@@ -27,7 +27,6 @@ typedef sjtu::time Time;
 typedef sjtu::Station Station;
 typedef sjtu::PriceName PriceName;
 typedef sjtu::pair<train, sjtu::vector<int>> trainInfo;
-
 const int CAPACITY = sjtu::TRAIN_CAPACITY;
 
 sjtu::BPlusTree <int, user> idUser("user");

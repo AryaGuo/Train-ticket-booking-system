@@ -14,7 +14,8 @@ namespace sjtu {
     
     const int TRAIN_CAPACITY = 2000;
 
-    const int STRING_LEN = 45;
+    const int NAME_LEN = 45;
+    const int DEFAULT_LEN = 25;
 
     const int STATION_NUM = 60;
     const int PRICE_NUM = 5;

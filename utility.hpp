@@ -8,19 +8,9 @@
 
 namespace sjtu {
 
-    template<class T1, class T2>
-    class pair;
-    class string;
-    class time;
-
     template<class T>
     T min(T a, T b) {
         return a < b ? a : b;
-    }
-
-    template<class T>
-    T max(T a, T b) {
-        return a < b ? b : a;
     }
 
     template<class T>
@@ -69,9 +59,147 @@ namespace sjtu {
         sort(_temp + 1, _end, cmp);
     }
 
-    double stringToDouble(string);
+    bool isDigit(char ch) {
+        return ch >= '0' && ch <= '9';
+    }
+}
 
-    bool isDigit(char);
+namespace _string {
+
+    template<int STRING_LEN = sjtu::DEFAULT_LEN>
+    class String {
+        friend std::ostream &operator<<(std::ostream &os, const String<STRING_LEN> &obj) {
+            os << obj.data;
+            return os;
+        }
+        friend std::istream &operator>>(std::istream &is, String<STRING_LEN> &obj) {
+            is >> obj.data;
+            obj.len = (int)strlen(obj.data);
+            return is;
+        }
+
+    private:
+        char data[STRING_LEN];
+        int len;
+
+    public:
+
+        String(): len(0) {
+            memset(data, 0, sizeof(data));
+        }
+
+        String(const char* ch){
+            len = (int)strlen(ch);
+            if(len >= STRING_LEN)
+                throw sjtu::overflow();
+            memcpy(data, ch, STRING_LEN);
+            data[len] = 0;
+        }
+
+
+        String(const String &other):len(other.len) {
+            memcpy(data, other.data, STRING_LEN);
+            data[len] = 0;
+        }
+
+        String(String &&other) = default;
+
+        String& operator=(const String &other) {
+            if(this == &other)
+                return *this;
+            len = other.len;
+            memcpy(data, other.data, STRING_LEN);
+            data[len] = 0;
+            return *this;
+        }
+
+        String& operator+=(const String &other) {
+            if(len + other.len >= STRING_LEN)
+                throw sjtu::overflow();
+            for(int i = 0, j = len; i < other.len; i++, j++)
+                data[j] = other[i];
+            len += other.length();
+            data[len] = 0;
+            return *this;
+        }
+
+        String& operator+= (const char &ch) {
+            if(len + 1 >= STRING_LEN)
+                throw sjtu::overflow();
+            data[len++] = ch;
+            data[len] = 0;
+            return *this;
+        }
+
+        bool operator== (const String &other) const{
+            if(len != other.len)
+                return false;
+            for(int i = 0; i < len; i++)
+                if(data[i] != other[i])
+                    return false;
+            return true;
+        }
+
+        bool operator!= (const String &other) const{
+            return !this->operator==(other);
+        }
+
+        bool operator< (const String &other) const{
+            int l = sjtu::min(len, other.len);
+            for(int i = 0; i < l; i++)
+                if(data[i] != other.data[i])
+                    return data[i] < other.data[i];
+            return len < other.len;
+        }
+
+        char& operator[] (const int &i) {
+            if(i < 0 || i > len)
+                throw sjtu::index_out_of_bound();
+            return data[i];
+        }
+
+        char operator[] (const int &i) const {
+            if(i < 0 || i > len)
+                throw sjtu::index_out_of_bound();
+            return data[i];
+        }
+
+        int length() const {
+            return len;
+        }
+
+        String get(int l, int r) {
+            String res;
+            res.len = r - l + 1;
+            for(int i = l; i <= r; i++)
+                res[i - l] = data[i];
+            res[res.len] = 0;
+            return res;
+        }
+    };
+
+}
+
+namespace sjtu {
+
+    typedef _string::String<> string;
+    typedef _string::String<NAME_LEN> Lstring;
+
+    double stringToDouble(string str) {
+        int len = str.length(), pos = 0;
+        double res = 0, base = 1;
+        while(pos < len && !isDigit(str[pos]))
+            pos++;
+        while(pos < len && isDigit(str[pos]))
+            res = res * 10 + str[pos] - '0', ++pos;
+        ++pos;
+        while(pos < len) {
+            base /= 10;
+            res += (str[pos] - '0') * base;
+            ++pos;
+        }
+        return res;
+    }
 
     template<class T1, class T2>
     class pair {
@@ -97,121 +225,6 @@ namespace sjtu {
             return first == other.first && second == other.second;
         }
     };
-
-    class string {
-        friend std::ostream &operator<<(std::ostream &os, const string &obj);
-        friend std::istream &operator>>(std::istream &is, string &obj);
-
-    private:
-        char data[STRING_LEN];
-        int len;
-
-    public:
-
-        string(): len(0) {
-            memset(data, 0, sizeof(data));
-        }
-
-        string(const char* ch){
-            len = (int)strlen(ch);
-            if(len >= STRING_LEN)
-                throw overflow();
-            memcpy(data, ch, STRING_LEN);
-            data[len] = 0;
-        }
-
-
-        string(const string &other):len(other.len) {
-            memcpy(data, other.data, STRING_LEN);
-            data[len] = 0;
-        }
-
-        string(string &&other) = default;
-
-        string& operator=(const string &other) {
-            if(this == &other)
-                return *this;
-            len = other.len;
-            memcpy(data, other.data, STRING_LEN);
-            data[len] = 0;
-            return *this;
-        }
-
-        string& operator+=(const string &other) {
-            if(len + other.len >= STRING_LEN)
-                throw overflow();
-            for(int i = 0, j = len; i < other.len; i++, j++)
-                data[j] = other[i];
-            len += other.length();
-            data[len] = 0;
-            return *this;
-        }
-
-        string& operator+= (const char &ch) {
-            if(len + 1 >= STRING_LEN)
-                throw overflow();
-            data[len++] = ch;
-            data[len] = 0;
-            return *this;
-        }
-
-        bool operator== (const string &other) const{
-            if(len != other.len)
-                return false;
-            for(int i = 0; i < len; i++)
-                if(data[i] != other[i])
-                    return false;
-            return true;
-        }
-
-        bool operator!= (const string &other) const{
-            return !this->operator==(other);
-        }
-
-        bool operator< (const string &other) const{
-            int l = min(len, other.len);
-            for(int i = 0; i < l; i++)
-                if(data[i] != other.data[i])
-                    return data[i] < other.data[i];
-            return len < other.len;
-        }
-
-        char& operator[] (const int &i) {
-            if(i < 0 || i > len)
-                throw sjtu::index_out_of_bound();
-            return data[i];
-        }
-
-        char operator[] (const int &i) const {
-            if(i < 0 || i > len)
-                throw sjtu::index_out_of_bound();
-            return data[i];
-        }
-
-        int length() const {
-            return len;
-        }
-
-        string get(int l, int r) {
-            string res;
-            res.len = r - l + 1;
-            for(int i = l; i <= r; i++)
-                res[i - l] = data[i];
-            res[res.len] = 0;
-            return res;
-        }
-    };
-
-    std::ostream &operator<<(std::ostream &os, const string &obj) {
-        os << obj.data;
-        return os;
-    }
-
-    std::istream &operator>>(std::istream &is, string &obj) {
-        is >> obj.data;
-        obj.len = (int)strlen(obj.data);
-        return is;
-    }
 
     class time {
     public:
@@ -315,25 +328,6 @@ namespace sjtu {
         return is;
     }
 
-    double stringToDouble(string str) {
-        int len = str.length(), pos = 0;
-        double res = 0, base = 1;
-        while(pos < len && !isDigit(str[pos]))
-            pos++;
-        while(pos < len && isDigit(str[pos]))
-            res = res * 10 + str[pos] - '0', ++pos;
-        ++pos;
-        while(pos < len) {
-            base /= 10;
-            res += (str[pos] - '0') * base;
-            ++pos;
-        }
-        return res;
-    }
-
-    bool isDigit(char ch) {
-        return ch >= '0' && ch <= '9';
-    }
 }
 
 #endif

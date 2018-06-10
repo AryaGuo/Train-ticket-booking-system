@@ -112,7 +112,9 @@ namespace sjtu {
         int stationNum, priceNum;
         int stationId[STATION_NUM];
         char catalog;
-        string id, name;
+        string id;
+        Lstring name;
+
 
     public:
         train() = default;
@@ -130,17 +132,15 @@ namespace sjtu {
 
     std::ostream &operator<<(std::ostream &os, const train &obj) {
         os << obj.id << ' ' << obj.name << ' ' << obj.catalog << ' ' << obj.stationNum << ' ' << obj.priceNum;
-        for (int i = 0; i < obj.priceNum; ++i);// os << ' ' << obj.priceName[i];
+        for (int i = 0; i < obj.priceNum; ++i);
         return os;
     }
 
     std::istream &operator>>(std::istream &is, train &obj) {
         is >> obj.name >> obj.catalog >> obj.stationNum >> obj.priceNum;
-        for (int i = 0; i < obj.priceNum; ++i);//is >> obj.priceName[i];
+        for (int i = 0; i < obj.priceNum; ++i);
         return is;
     }
-
-
 
 }
 
