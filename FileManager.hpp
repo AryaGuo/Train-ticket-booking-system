@@ -48,15 +48,32 @@ namespace sjtu {
         addType tail_off;
         addType append_off;
 
+        struct one{
+            addType root_off = -1;
+            addType head_off = -1;
+            addType tail_off = -1;
+            addType append_off = start;
+
+        };
+
+        struct two{
+            bool isLeaf;
+            addType next;
+            short key;
+            short value;
+            short child;
+        };
+
+
+
     private:
         void createFile() {
             file = fopen(filename, "wb");
             root_off = head_off = tail_off = -1;
             append_off = start;
-            fwrite(&root_off, sizeof(int), 1, file);
-            fwrite(&head_off, sizeof(int), 1, file);
-            fwrite(&tail_off, sizeof(int), 1, file);
-            fwrite(&append_off, sizeof(int), 1, file);
+            one a;
+
+            fwrite(&a,sizeof(one),1,file);
             fclose(file);
         }
 
@@ -67,10 +84,13 @@ namespace sjtu {
                 file = fopen(filename, "r+b");
             } else {
                 file = fopen(filename, "r+b");
-                fread(&root_off, sizeof(int), 1, file);
-                fread(&head_off, sizeof(int), 1, file);
-                fread(&tail_off, sizeof(int), 1, file);
-                fread(&append_off, sizeof(int), 1, file);
+                one a;
+                fread(&a,sizeof(one),1,file);
+                head_off = a.head_off;
+                tail_off = a.tail_off;
+                root_off = a.root_off;
+                append_off = a.append_off;
+
             }
         }
 
@@ -113,10 +133,14 @@ namespace sjtu {
                 return false;
             } else {
                 fseek(file, 0, SEEK_SET);
-                fwrite(&root_off, sizeof(int), 1, file);
-                fwrite(&head_off, sizeof(int), 1, file);
-                fwrite(&tail_off, sizeof(int), 1, file);
-                fwrite(&append_off, sizeof(int), 1, file);
+                one a;
+                a.head_off = head_off;
+                a.root_off = root_off;
+                a.tail_off = tail_off;
+                a.append_off = append_off;
+                fwrite(&a,sizeof(one),1,file);
+
+
                 fclose(file);
                 root_off = head_off = tail_off = -1;
                 append_off = start;
@@ -136,10 +160,8 @@ namespace sjtu {
                 fclose(file);
                 file = fopen(filename, "wb+");
                 fseek(file, 0, SEEK_SET);
-                fwrite(&root_off, sizeof(int), 1, file);
-                fwrite(&head_off, sizeof(int), 1, file);
-                fwrite(&tail_off, sizeof(int), 1, file);
-                fwrite(&append_off, sizeof(int), 1, file);
+                one a;
+                fwrite(&a,sizeof(one),1,file);
                 return true;
             }
         }
@@ -150,17 +172,21 @@ namespace sjtu {
 
         void get_block(addType offset, Node &ret) {
             ret.address = offset;
-            fseek(file, offset, SEEK_SET);
-            fread(&ret.isLeaf, sizeof(bool), 1, file);
-            short K_size, V_size, Ch_size;
+            two a;
 
-            fread(&K_size, sizeof(short), 1, file);
-            if (K_size != 0)ret.keys.read_file(file, K_size); else ret.keys.shorten_len(0);
-            fread(&V_size, sizeof(short), 1, file);
-            if (V_size != 0)ret.vals.read_file(file, V_size); else ret.vals.shorten_len(0);
-            fread(&Ch_size, sizeof(short), 1, file);
-            if (Ch_size != 0)ret.childs.read_file(file, Ch_size); else ret.childs.shorten_len(0);
-            fread(&ret.next, sizeof(addType), 1, file);
+            fseek(file, offset, SEEK_SET);
+            fread(&a, sizeof(two), 1, file);
+            ret.isLeaf = a.isLeaf;
+            ret.next = a.next;
+            short K_size = a.key;
+            short V_size = a.value;
+            short Ch_size = a.child;
+
+
+            ret.keys.read_file(file, K_size);
+            ret.vals.read_file(file, V_size);
+            ret.childs.read_file(file, Ch_size);
+
         }
 
         bool get_next_block(const Node &cur, Node &ret) {
@@ -203,19 +229,27 @@ namespace sjtu {
             append_off += BlockSize;
         }
 
+
+
+
+
+
         void write_block(Node &now) {
-            fseek(file, now.address, SEEK_SET);
-            fwrite(&now.isLeaf, sizeof(bool), 1, file);
-            short write_in = now.keys.size();
-            fwrite(&write_in, sizeof(short), 1, file);
-            if (now.keys.size() != 0) now.keys.write_file(file);
-            write_in = now.vals.size();
-            fwrite(&write_in, sizeof(short), 1, file);
-            if (now.vals.size() != 0) now.vals.write_file(file);
-            write_in = now.childs.size();
-            fwrite(&write_in, sizeof(short), 1, file);
-            if (now.childs.size() != 0) now.childs.write_file(file);
-            fwrite(&now.next, sizeof(addType), 1, file);
+            fseek(file,now.address,SEEK_SET);
+            two a;
+            a.isLeaf = now.isLeaf;
+            a.next = now.next;
+            a.key = now.keys.size();
+            a.value = now.vals.size();
+            a.child = now.childs.size();
+            fwrite(&a, sizeof(two), 1, file);
+
+            now.keys.write_file(file);
+
+            now.vals.write_file(file);
+
+            now.childs.write_file(file);
+
 
         }
 
