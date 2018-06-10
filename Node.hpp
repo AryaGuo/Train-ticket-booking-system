@@ -17,11 +17,11 @@ namespace sjtu {
     public:
         addType address;          // 文件中地址
         bool isLeaf;
-
+        addType next;
         sjtu::vector<Key_Type> keys;
         sjtu::vector<Value_Type> vals;
         sjtu::vector<addType> childs;
-        addType next;
+
 
         bool Cmp(const Key_Type &x, const Key_Type &y) const {       ///<
             static Compare _cmp;

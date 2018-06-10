@@ -9,12 +9,12 @@ namespace sjtu {
 
     template <class ElemType>
     class vector {
-    private:
-        ElemType vec[BlockSize * 2 / sizeof(ElemType)];
-        int len;
+    public:
+        ElemType vec[BlockSize / sizeof(ElemType)];
+        short len;
     public:
         vector():len(0) {}
-        explicit vector(const int &&size) {
+        explicit vector(const short &&size) {
             len = 0;
         }
         ~vector() {
