@@ -56,7 +56,7 @@ namespace sjtu {
         };
 
         struct two{
-            char mem[4096] = {'a'};
+            char mem[4096];
         };
         //two a;
 
@@ -188,30 +188,24 @@ namespace sjtu {
             memcpy(&Ch_size, a.mem + pos*sizeof(char), 2);
             pos+=2;
 
-            ret.keys.shorten_len(0);
-            ret.vals.shorten_len(0);
-            ret.childs.shorten_len(0);
+            ret.keys.shorten_len(K_size);
+            ret.vals.shorten_len(V_size);
+            ret.childs.shorten_len(Ch_size);
             for(int i = 0; i  <  K_size; ++i)
             {
-                Key_Type x;
-                memcpy(&x, a.mem + pos*sizeof(char),  sizeof(Key_Type));
+                memcpy(&ret.keys[i], a.mem + pos*sizeof(char),  sizeof(Key_Type));
                 pos+= sizeof(Key_Type);
-                ret.keys.push_back(x);
             }
 
             for(int i = 0; i  <  V_size; ++i)
             {
-                Value_Type x;
-                memcpy(&x, a.mem + pos*sizeof(char),  sizeof(Value_Type));
+                memcpy(&ret.vals[i], a.mem + pos*sizeof(char),  sizeof(Value_Type));
                 pos+= sizeof(Value_Type);
-                ret.vals.push_back(x);
             }
             for(int i = 0; i  <  Ch_size; ++i)
             {
-                addType x;
-                memcpy(&x, a.mem + pos*sizeof(char),  sizeof(addType));
+                memcpy(&ret.childs[i], a.mem + pos*sizeof(char),  sizeof(addType));
                 pos+= sizeof(addType);
-                ret.childs.push_back(x);
             }
             if(pos > 4096) {std::cout<<"wrong! "<<pos<<'\n';
             std::cout<<"? "<<sizeof(Key_Type) <<' '<<K_size<<'\n';
@@ -289,26 +283,22 @@ namespace sjtu {
 
             for(int i = 0; i < now.keys.size(); i++)
             {
-                Key_Type x = now.keys[i];
-                memcpy(a.mem + pos, &x, sizeof(Key_Type));
+                memcpy(a.mem + pos, &now.keys[i], sizeof(Key_Type));
                 pos += sizeof(Key_Type);
             }
             for(int i = 0; i < now.vals.size(); i++)
             {
-                Value_Type x = now.vals[i];
-                memcpy(a.mem + pos, &x, sizeof(Value_Type));
+                memcpy(a.mem + pos, &now.vals[i], sizeof(Value_Type));
                 pos += sizeof(Value_Type);
             }
 
             for(int i = 0; i < now.childs.size(); i++)
             {
-                addType x = now.childs[i];
-                memcpy(a.mem + pos, &x, sizeof(addType));
+                memcpy(a.mem + pos, &now.childs[i], sizeof(addType));
                 pos += sizeof(addType);
             }
-           
+
              fwrite(&a, sizeof(two), 1, file);
-          //  if(!rig) std::cout<<"wa!\n";
         }
 
         void set_root(addType offset) {
