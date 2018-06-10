@@ -223,7 +223,7 @@ namespace sjtu {
         }
 
         void append_block(Node &ret, bool isLeaf) {
-            ret.clear();
+            //ret.clear();
             ret.address = append_off;
             ret.isLeaf = isLeaf;
             append_off += BlockSize;
