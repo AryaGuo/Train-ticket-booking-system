@@ -1,4 +1,4 @@
-#ifndef TREENODE_H
+;#ifndef TREENODE_H
 #define TREENODE_H
 
 #include "vector.hpp"
@@ -17,7 +17,7 @@ namespace sjtu {
     public:
         addType address;          // 文件中地址
         bool isLeaf;
-        addType next
+        addType next;
         sjtu::vector<Key_Type> keys;
         sjtu::vector<Value_Type> vals;
         sjtu::vector<addType> childs;
