@@ -17,8 +17,7 @@ namespace sjtu {
     public:
         addType address;          // 文件中地址
         bool isLeaf;
-        addType next;
-
+        addType next
         sjtu::vector<Key_Type> keys;
         sjtu::vector<Value_Type> vals;
         sjtu::vector<addType> childs;
@@ -87,11 +86,11 @@ namespace sjtu {
                 int low = 0, high = keys.size() - 1;
                 int mid;
                 while (high - low >= min_cmp) {
-                    mid = (low + high + 1) / 2;
+                    mid = (low + high ) / 2;
                     if (!Cmp(K, keys[mid]))
                         low = mid;
                     else
-                        high = mid - 1;
+                        high = mid;
                 }
                 while (low < keys.size() && !Cmp(K, keys[low])) ++low;
                 if (low == keys.size()) return -1;
