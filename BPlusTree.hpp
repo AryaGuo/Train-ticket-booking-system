@@ -54,7 +54,7 @@ namespace sjtu {
         char filename[50];
         int branch_degree, leaf_degree;
         int K_byte, V_byte; /**     size of   key_byte, value_byte            */
-        Node pool[20];
+        Node pool[100];
     public:
         int cnt;    /**    记录pool的num     */
         FileManager<Key_Type, Value_Type> bm;
